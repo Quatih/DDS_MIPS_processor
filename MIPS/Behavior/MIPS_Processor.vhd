@@ -20,6 +20,7 @@ architecture behavior of MIPS_Processor is
     signal bus_out_i, memory_location_i : std_logic_vector(word_length-1 downto 0);
     signal read_i, write_i: std_ulogic;
     variable pc : natural;
+    variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
 
 begin
     process (clk, reset)
@@ -33,12 +34,18 @@ begin
             pc := text_base_address; -- starting address to base address
         elsif rising_edge(clk) then
             -- read from address
+                -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
+                -- read_i <= '1';
             -- decode instruction
-            -- load from memory
+            -- do whatever
+            -- load data memory
+                --memory_location_i <= "location";
             -- execute instruction
             -- store results from ALU
+                -- bus_out_i <= "result";
+                -- write_i <= '1';
             -- increment program counter
-            pc := pc + text_base_size;
+                -- pc := pc + text_base_size;
         end if;
     end seq;
 

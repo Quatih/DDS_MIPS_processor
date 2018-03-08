@@ -1,0 +1,7 @@
+Design decisions we need to make about the implementation
+  - no. of registers
+  - 
+
+  testbench
+
+Division of work

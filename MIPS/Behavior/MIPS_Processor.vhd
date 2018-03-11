@@ -122,7 +122,7 @@ architecture behaviour of MIPS_Processor is
       IF reset='1' THEN
         RETURN;
       END IF;  
-      write <= '1';
+      write_i <= '1';
 
       LOOP
         WAIT UNTIL clk='1';
@@ -136,7 +136,7 @@ architecture behaviour of MIPS_Processor is
         RETURN;
       END IF;
       --
-      write <= '0';
+      write_i <= '0';
       bus_out_i <= (others => '0');
       memory_location_i <= (others => '0');
     END memory_write;

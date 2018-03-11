@@ -16,14 +16,28 @@ entity MIPS_Processor IS
           );
 end MIPS_Processor;
 
-architecture behavior of MIPS_Processor is
+
+architecture behaviour of MIPS_Processor is
+    subtype instruction is std_logic_vector (5 downto 0);
+    subtype reg_code is std_logic_vector (4 downto 0);
+    constant lw : instruction := "100011";
+    constant sw : instruction := "101011";
+
     type states is (fetch, decode, load, execute, store );
     signal bus_out_i, memory_location_i : std_logic_vector(word_length-1 downto 0);
     signal read_i, write_i: std_ulogic;
     variable pc : natural;
     variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
-    variable instructon_reg : std_logic_vector(7 downto 0);
-    variable state : states :=
+        alias cc_n  : std_logic IS cc(2);
+        alias cc_z  : std_logic IS cc(1);
+        alias cc_v  : std_logic IS cc(0);
+    variable current_instr: std_logic_vector(word_length -1 downto 0);
+        alias opcode : instruction IS current_instr(31 DOWNTO 26);
+        alias rs : reg_code IS current_instr(25 DOWNTO 21);
+        alias rt : reg_code IS current_instr(20 DOWNTO 16);
+        alias imm : reg_code IS current_instr(15 DOWNTO 0);
+        alias rd : reg_code Is current_instr(15 downto 11);
+    variable st ate : states :=
 begin
     process (clk, reset)
     variable opcode : std_logic_vector(5 downto 0);
@@ -37,30 +51,35 @@ begin
             cc := (others => '0');
         elsif rising_edge(clk) then
             case state is
-
+                fetch =>
             -- read from address
+                current_instr := bus_in;
                 -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
                 -- read_i <= '1';
-            -- decode instruction
-            opcode := bus_in(31 downto 26);
-            case opcode is
-                "000000" => -- R-type
-                    
-                "001000" => -- I-type
+           decode => -- decode instruction
+                
+                case opcode is
+                    "000000" => -- R-type
+                        
+                    "001000" => -- I-type
 
-                "000010" => -- J-type
-                others => -- do nothing?
-            end case;
-            
+                    "000010" => -- J-type
+                    others => -- do nothing?
+                end case;
+
             -- do whatever
-            -- load data memory
+            load => -- load data memory
                 --memory_location_i <= "location";
+
+            execute =>
             -- execute instruction
+            store => 
             -- store results from ALU
                 -- bus_out_i <= "result";
                 -- write_i <= '1';
-            -- increment program counter
+                -- increment program counter
                 -- pc := pc + text_base_size;
+                state = fetch;
             end case;
         end if;
     end seq;

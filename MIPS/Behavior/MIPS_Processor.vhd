@@ -17,15 +17,16 @@ entity MIPS_Processor IS
 end MIPS_Processor;
 
 architecture behavior of MIPS_Processor is
+    type states is (fetch, decode, load, execute, store );
     signal bus_out_i, memory_location_i : std_logic_vector(word_length-1 downto 0);
     signal read_i, write_i: std_ulogic;
     variable pc : natural;
     variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
     variable instructon_reg : std_logic_vector(7 downto 0);
-    
+    variable state : states :=
 begin
     process (clk, reset)
-
+    variable opcode : std_logic_vector(5 downto 0);
     begin
         if reset = '0' then
             read_i <= '0';
@@ -35,11 +36,20 @@ begin
             pc := text_base_address; -- starting address to base address
             cc := (others => '0');
         elsif rising_edge(clk) then
+
             -- read from address
                 -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
                 -- read_i <= '1';
             -- decode instruction
+            opcode := bus_in(31 downto 26);
+            case opcode is
+                "000000" => -- R-type
 
+                "001000" => -- I-type
+
+                "000010" => -- J-type
+                others => -- do nothing?
+            end case;
             -- do whatever
             -- load data memory
                 --memory_location_i <= "location";

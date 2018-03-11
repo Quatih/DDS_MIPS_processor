@@ -21,6 +21,8 @@ package processor_types is
     subtype reg_code is std_logic_vector (4 downto 0);
     constant lw : instruction := "100011";
     constant sw : instruction := "101011";
+
+
 end processor_types;
 
 LIBRARY ieee;
@@ -29,7 +31,6 @@ USE ieee.numeric_std.ALL;
 USE work.processor_types.ALL;
 
 architecture behaviour of MIPS_Processor is
-    type states is (fetch, decode, load, execute, store);
     signal bus_out_i, memory_location_i : std_logic_vector(word_length-1 downto 0);
     signal read_i, write_i: std_ulogic;
     variable pc : natural;
@@ -44,7 +45,148 @@ architecture behaviour of MIPS_Processor is
         alias rt : reg_code is current_instr(20 downto 16);
         alias imm : reg_code is current_instr(15 downto 0);
         alias rd : reg_code is current_instr(15 downto 11);
-    variable state : states;
+
+
+    PROCEDURE memory_read (addr   : IN natural;
+        result : OUT std_logic_vector(word_length-1 downto 0)) IS
+    -- Used 'global' signals are:
+    --   clk, reset, ready, read, a_bus, d_busin
+    -- read data from addr in memory
+    BEGIN
+        -- put address on output
+        memory_location_i <= std_logic_vector(to_unsigned(addr,16));
+        WAIT UNTIL clk='1';
+            IF reset='1' THEN
+                RETURN;
+        END IF;
+
+        LOOP -- ready must be low (handshake)
+            IF reset='1' THEN
+                RETURN;
+            END IF;
+            EXIT WHEN ready='0';
+            WAIT UNTIL clk='1';
+        END LOOP;
+
+        read_i <= '1';
+        WAIT UNTIL clk='1';
+        IF reset='1' THEN
+            RETURN;
+        END IF;
+
+        LOOP
+            WAIT UNTIL clk = '1';
+            IF reset = '1' THEN
+                RETURN;
+            END IF;
+
+            IF ready='1' THEN
+                result := bus_in;
+                EXIT;
+            END IF;    
+        END LOOP;
+
+        WAIT UNTIL clk='1';
+        IF reset='1' THEN
+            RETURN;
+        END IF;
+
+        read_i <= '0'; 
+        memory_location_i <= (OTHERS => '-');
+    END memory_read;                         
+    
+    PROCEDURE memory_write(addr : IN natural;
+                           data : IN std_logic_vector(word_length-1 downto 0)) IS
+    -- Used 'global' signals are:
+    --   clk, reset, ready, write, a_bus, d_busout
+    -- write data to addr in memory
+      VARIABLE add : std_logic_vector(word_length-1 downto 0);
+    BEGIN
+      -- put address on output
+      memory_location_i <= std_ulogic_vector(to_unsigned(addr,16));
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+
+      LOOP -- ready must be low (handshake)
+        IF reset='1' THEN
+          RETURN;
+        END IF;
+        EXIT WHEN ready='0';
+        WAIT UNTIL clk='1';
+      END LOOP;
+
+      bus_out_i <= data;
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;  
+      write <= '1';
+
+      LOOP
+        WAIT UNTIL clk='1';
+        IF reset='1' THEN
+          RETURN;
+        END IF;
+         EXIT WHEN ready='1';  
+      END LOOP;
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+      --
+      write <= '0';
+      bus_out_i <= (others => '0');
+      memory_location_i <= (others => '0');
+    END memory_write;
+    
+    PROCEDURE read_data(s_d    : IN bit4;
+                        d0, d1 : IN bit16;
+                        a0, a1 : IN bit16;
+                        pc     : inout natural;
+                        data   : OUT bit16) IS   
+    -- read data from d0,d1,a0,a1,(a0),(a1),imm
+      VARIABLE tmp : bit16;
+    BEGIN
+      CASE s_d IS
+        WHEN rd0    => data := d0;
+        WHEN rd1    => data := d1;
+        WHEN ra0    => data := a0;
+        WHEN ra1    => data := a1;
+        WHEN a0_ind => memory_read(to_integer(unsigned(a0)),data);
+        WHEN a1_ind => memory_read(to_integer(unsigned(a1)),data);
+        WHEN imm    => memory_read(pc,data);
+                       pc := pc + 1;
+        WHEN OTHERS => ASSERT false REPORT "illegal src/dst while reading data"
+                       SEVERITY warning;
+      END CASE;
+    END read_data;
+    
+    PROCEDURE write_data(s_d    : IN bit4;
+                         d0, d1 : INOUT bit16;
+                         a0, a1 : INOUT bit16;
+                         pc     : INOUT natural;
+                         data   : IN bit16) IS   
+    -- write data to d0,d1,a0,a1,(a0),(a1),imm
+      VARIABLE tmp:bit16;
+      VARIABLE addr: bit16;
+    BEGIN
+      CASE s_d IS
+        WHEN rd0    => d0:=data;
+        WHEN rd1    => d1:=data;
+        WHEN ra0    => a0 := data;
+        WHEN ra1    => a1 := data;
+        WHEN a0_ind => memory_write(to_integer(unsigned(a0)),data);
+        WHEN a1_ind => memory_write(to_integer(unsigned(a1)),data);
+        WHEN imm    => memory_read(pc,addr);
+                       pc := pc + 1;
+                       memory_write(to_integer(unsigned(addr)),data);
+        WHEN OTHERS => ASSERT false REPORT "illegal src or dst while writing data"
+                       SEVERITY warning;
+      END CASE;
+    END write_data;
+
 begin
     process (clk, reset)
     variable opcode : std_logic_vector(5 downto 0);
@@ -56,39 +198,8 @@ begin
             memory_location_i <= (others => '0');
             pc := text_base_address; -- starting address to base address
             cc := (others => '0');
-            state := fetch;
         elsif rising_edge(clk) then
-            case state is
-                when fetch =>
-            -- read from address
-                current_instr := bus_in;
-                -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
-                -- read_i <= '1';
-                when decode => -- decode instruction
-                
-                case opcode is
-                   when "000000" => -- R-type
-                        
-                   when "001000" => -- I-type
-
-                   when "000010" => -- J-type
-                    others => -- do nothing?
-                end case;
-
-                  -- do whatever
-                when load => -- load data memory
-                      --memory_location_i <= "location";
-
-                when execute =>
-                    -- execute instruction
-                when store => 
-                    -- store results from ALU
-                        -- bus_out_i <= "result";
-                        -- write_i <= '1';
-                        -- increment program counter
-                        -- pc := pc + text_base_size;
-                    state = fetch;
-            end case;
+            
         end if;
     end seq;
 

@@ -2,8 +2,8 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
-entity MIPS_Processor IS
-    generic (word_length : integer := 32 );
+entity MIPS_Processor is
+    generic (word_length : integer := 32);
     port (
           clk : IN std_logic;
           reset : IN std_logic;
@@ -23,27 +23,27 @@ package processor_types is
     constant sw : instruction := "101011";
 end processor_types;
 
-
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 USE work.processor_types.ALL;
 
 architecture behaviour of MIPS_Processor is
-    type states is (fetch, decode, load, execute, store );
+    type states is (fetch, decode, load, execute, store);
     signal bus_out_i, memory_location_i : std_logic_vector(word_length-1 downto 0);
     signal read_i, write_i: std_ulogic;
     variable pc : natural;
     variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
-        alias cc_n  : std_logic IS cc(2);
-        alias cc_z  : std_logic IS cc(1);
-        alias cc_v  : std_logic IS cc(0);
+        alias cc_n  : std_logic is cc(2);
+        alias cc_z  : std_logic is cc(1);
+        alias cc_v  : std_logic is cc(0);
     variable current_instr: std_logic_vector(word_length -1 downto 0);
-        alias opcode : instruction IS current_instr(31 downto 26);
-        alias rs : reg_code IS current_instr(25 downto 21);
-        alias rt : reg_code IS current_instr(20 downto 16);
-        alias imm : reg_code IS current_instr(15 downto 0);
-        alias rd : reg_code Is current_instr(15 downto 11);
+        alias opcode : instruction is current_instr(31 downto 26);
+        alias rtype : instruction is current_instr(5 downto 0);
+        alias rs : reg_code is current_instr(25 downto 21);
+        alias rt : reg_code is current_instr(20 downto 16);
+        alias imm : reg_code is current_instr(15 downto 0);
+        alias rd : reg_code is current_instr(15 downto 11);
     variable state : states;
 begin
     process (clk, reset)
@@ -59,35 +59,35 @@ begin
             state := fetch;
         elsif rising_edge(clk) then
             case state is
-                fetch =>
+                when fetch =>
             -- read from address
                 current_instr := bus_in;
                 -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
                 -- read_i <= '1';
-           decode => -- decode instruction
+                when decode => -- decode instruction
                 
                 case opcode is
-                    "000000" => -- R-type
+                   when "000000" => -- R-type
                         
-                    "001000" => -- I-type
+                   when "001000" => -- I-type
 
-                    "000010" => -- J-type
+                   when "000010" => -- J-type
                     others => -- do nothing?
                 end case;
 
-            -- do whatever
-            load => -- load data memory
-                --memory_location_i <= "location";
+                  -- do whatever
+                when load => -- load data memory
+                      --memory_location_i <= "location";
 
-            execute =>
-            -- execute instruction
-            store => 
-            -- store results from ALU
-                -- bus_out_i <= "result";
-                -- write_i <= '1';
-                -- increment program counter
-                -- pc := pc + text_base_size;
-                state = fetch;
+                when execute =>
+                    -- execute instruction
+                when store => 
+                    -- store results from ALU
+                        -- bus_out_i <= "result";
+                        -- write_i <= '1';
+                        -- increment program counter
+                        -- pc := pc + text_base_size;
+                    state = fetch;
             end case;
         end if;
     end seq;

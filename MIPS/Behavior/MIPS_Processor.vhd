@@ -16,13 +16,20 @@ entity MIPS_Processor IS
           );
 end MIPS_Processor;
 
-
-architecture behaviour of MIPS_Processor is
+package processor_types is
     subtype instruction is std_logic_vector (5 downto 0);
     subtype reg_code is std_logic_vector (4 downto 0);
     constant lw : instruction := "100011";
     constant sw : instruction := "101011";
+end processor_types;
 
+
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+USE work.processor_types.ALL;
+
+architecture behaviour of MIPS_Processor is
     type states is (fetch, decode, load, execute, store );
     signal bus_out_i, memory_location_i : std_logic_vector(word_length-1 downto 0);
     signal read_i, write_i: std_ulogic;
@@ -32,12 +39,12 @@ architecture behaviour of MIPS_Processor is
         alias cc_z  : std_logic IS cc(1);
         alias cc_v  : std_logic IS cc(0);
     variable current_instr: std_logic_vector(word_length -1 downto 0);
-        alias opcode : instruction IS current_instr(31 DOWNTO 26);
-        alias rs : reg_code IS current_instr(25 DOWNTO 21);
-        alias rt : reg_code IS current_instr(20 DOWNTO 16);
-        alias imm : reg_code IS current_instr(15 DOWNTO 0);
+        alias opcode : instruction IS current_instr(31 downto 26);
+        alias rs : reg_code IS current_instr(25 downto 21);
+        alias rt : reg_code IS current_instr(20 downto 16);
+        alias imm : reg_code IS current_instr(15 downto 0);
         alias rd : reg_code Is current_instr(15 downto 11);
-    variable st ate : states :=
+    variable state : states;
 begin
     process (clk, reset)
     variable opcode : std_logic_vector(5 downto 0);
@@ -49,6 +56,7 @@ begin
             memory_location_i <= (others => '0');
             pc := text_base_address; -- starting address to base address
             cc := (others => '0');
+            state := fetch;
         elsif rising_edge(clk) then
             case state is
                 fetch =>

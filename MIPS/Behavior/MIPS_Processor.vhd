@@ -36,6 +36,7 @@ begin
             pc := text_base_address; -- starting address to base address
             cc := (others => '0');
         elsif rising_edge(clk) then
+            case state is
 
             -- read from address
                 -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
@@ -44,12 +45,13 @@ begin
             opcode := bus_in(31 downto 26);
             case opcode is
                 "000000" => -- R-type
-
+                    
                 "001000" => -- I-type
 
                 "000010" => -- J-type
                 others => -- do nothing?
             end case;
+            
             -- do whatever
             -- load data memory
                 --memory_location_i <= "location";
@@ -59,6 +61,7 @@ begin
                 -- write_i <= '1';
             -- increment program counter
                 -- pc := pc + text_base_size;
+            end case;
         end if;
     end seq;
 

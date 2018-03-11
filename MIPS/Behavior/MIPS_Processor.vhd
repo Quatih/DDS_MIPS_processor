@@ -153,7 +153,14 @@ begin
             pc := text_base_address; -- starting address to base address
             cc := (others => '0');
         elsif rising_edge(clk) then
-            
+            memory_read(pc, current_instr);
+            case op is
+                when r => 
+                    case rtype is
+                        when others => -- illegal, add assert
+                    end case;
+                when others => -- illegal, add assert
+            end case;
         end if;
     end seq;
 

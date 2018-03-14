@@ -154,13 +154,26 @@ begin
             cc := (others => '0');
         elsif rising_edge(clk) then
             memory_read(pc, current_instr);
+            
+            -- decode
             case op is
                 when r => 
                     case rtype is
                         when others => -- illegal, add assert
                     end case;
+                -- when all other instructions.
                 when others => -- illegal, add assert
             end case;
+            
+            -- load data
+            memory_read(SOME_registr, SOME_memory_loc);
+
+            -- execute
+
+            -- write
+
+            -- if not instruction which modifies pc, increment;
+            
         end if;
     end seq;
 

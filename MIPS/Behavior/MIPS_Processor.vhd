@@ -222,21 +222,21 @@ begin
                         when nop => assert false report 
                                     "illegal r-type instruction" severity failure                        
                         when add => 
-                        when addi =>
                         when mflo =>
                         when mfhi =>
                         when mult =>
                         when sub =>
                         when div => 
                         when slt =>
+                        when orop =>
                         when others => -- add assert warning
                     end case;
+                when addi =>
                 when lw =>
                 when sw =>
                 when lui =>
                 when beq =>
                 when ori =>
-                when orop =>
                 when bgez =>
                 when others => -- Illegal opcode, assert
             end case;

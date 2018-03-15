@@ -17,7 +17,7 @@ entity MIPS_Processor IS
 end MIPS_Processor;
 
 package processor_types is
-    subtype instruction is std_logic_vector (5 downto 0);
+    subtype op_code is std_logic_vector (5 downto 0);
     subtype reg_code is std_logic_vector (4 downto 0);
     constant lw : instruction := "100011";
     constant sw : instruction := "101011";
@@ -55,12 +55,11 @@ architecture behaviour of MIPS_Processor is
         alias cc_z  : std_logic IS cc(1);
         alias cc_v  : std_logic IS cc(0);
     variable current_instr: std_logic_vector(word_length -1 downto 0);
-        alias opcode : instruction IS current_instr(31 downto 26);
+        alias opcode : op_code IS current_instr(31 downto 26);
         alias rs : reg_code IS current_instr(25 downto 21);
         alias rt : reg_code IS current_instr(20 downto 16);
         alias imm : reg_code IS current_instr(15 downto 0);
         alias rd : reg_code Is current_instr(15 downto 11);
-    variable state : states;
 begin
     process (clk, reset)
     variable opcode : std_logic_vector(5 downto 0);
@@ -74,13 +73,12 @@ begin
             cc := (others => '0');
             state := fetch;
         elsif rising_edge(clk) then
-            case state is
-                fetch =>
+               -- fetch =>
             -- read from address
                 current_instr := bus_in;
                 -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
                 -- read_i <= '1';
-           decode => -- decode instruction
+              -- decode => -- decode instruction
                 
                 case opcode is
                     "000000" => -- R-type
@@ -92,19 +90,18 @@ begin
                 end case;
 
             -- do whatever
-            load => -- load data memory
+            -- load => -- load data memory
                 --memory_location_i <= "location";
 
-            execute =>
+            -- execute =>
             -- execute instruction
-            store => 
+            -- store => 
             -- store results from ALU
                 -- bus_out_i <= "result";
                 -- write_i <= '1';
                 -- increment program counter
                 -- pc := pc + text_base_size;
-                state = fetch;
-            end case;
+             --   state = fetch;
         end if;
     end seq;
 

@@ -46,7 +46,6 @@ package processor_types is
     constant reg_a1 : reg_code := "00101";
     constant a0_addr : reg_code := "00110"; -- memory address in a0
     constant a1_addr : reg_code := "00111"; -- memory address in a1
-    constant reg_Z : reg_code := "01000";
 end processor_types;
 
 
@@ -63,11 +62,10 @@ architecture behaviour of MIPS_Processor is
     variable a1 : word;
     variable d0 : word;
     variable d1 : word;
-    
-        alias lo : word is d1;
-        alias hi : word is d0;
-    variable data : word; -- temp variable
-    
+    variable muldiv : std_logic_vector(word_length*2 -1 downto 0);
+        alias lo : word is muldiv(word_length*2 -1 downto word_length -1);
+        alias hi : word is muldiv(word_length -1 downto 0);
+    variable data : integer; -- temp variable
     variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
         alias cc_n  : std_logic IS cc(2); -- negative
         alias cc_z  : std_logic IS cc(1); -- zero
@@ -79,15 +77,18 @@ architecture behaviour of MIPS_Processor is
         alias imm : reg_code IS current_instr(15 downto 0);
         alias rd : reg_code Is current_instr(15 downto 11);
         alias rtype : op_code IS current_instr(5 downto 0);
-    procedure set_cc (data : in integer)
+
+    procedure set_cc_rd (data : inout word
+                         cc : out std_logic_vector(2 downto 0)) is
         constant low  : integer := -2**(word_length - 1);
         constant high : integer := 2**(word_length - 1) - 1;
         begin
-            if (data<low) or (data>high)
+            if (to_signed(data)<low) or (to_signed(data)>high)
             then -- overflow
                 ASSERT false REPORT "overflow situation in arithmetic operation" SEVERITY 
                 note;
                 cc_v:='1'; cc_n:='-'; cc_z:='-';
+                data := (others => '-');
             else
                 cc_v:='0'; 
                 if(data <0) then
@@ -101,7 +102,7 @@ architecture behaviour of MIPS_Processor is
                     cc_z = '0';       
                 end if;
             end if;
-    end set_cc;
+    end set_cc_rd;
 
     procedure memory_read (addr   : in natural;
                            result : out word) IS
@@ -215,23 +216,21 @@ architecture behaviour of MIPS_Processor is
 
     procedure write_data(destination : in reg_code;
                          d0, d1, a0, a1 : inout word;
-                         pc : inout natural;
                          data : in integer)is
     begin
         case destination is
-            when none => ret := 0;
-            when instr_imm => ret := to_integer(imm);
-            when reg_d0 => ret := d0;
-            when reg_d1 => ret := d1;
-            when reg_a0 => ret := a0;
-            when reg_a1 => ret := a1;
-            when a0_addr => memory_read(a0, ret);
-            when a1_addr => memory_read(a1, ret);
-            when reg_Z => memory_write
+            when none => NULL;
+            when instr_imm => NULL;
+            when reg_d0 => d0 := data;
+            when reg_d1 => d1 := data;
+            when reg_a0 => a0 := data;
+            when reg_a1 => a1 := data;
+            when a0_addr => memory_write(a0, data);
+            when a1_addr => memory_write(a1, data);
             when others => assert false report "illegal source when reading data" severity warning;
         end case;
-        return ret;
     end write_data;
+
 begin
     process
     begin
@@ -250,21 +249,33 @@ begin
         pc := pc + 1;
         memory_read(pc, current_instr); -- read instruction
 
-<<<<<<< HEAD
         case opcode is
             when "000000" => -- R-type
                 case rtype is 
-                    when nop => assert false report "finished calculation" severity failure;                                                  
-                    when add => data := read_data(rs) + read_data(rt);
+                    when mult | div =>
+                        case rtype is
+                            when mult => muldiv = read_data(rs)*read_data(rt);
+                            when div => lo = read_data(rs)/read_data(rt);
+                                        hi = read_data(rs) mod read_data(rt);
+                        end case;
+                    when others =>
+                        case rtype is 
+                            when nop => assert false report "finished calculation" severity failure;                                                  
+                            when add => data := read_data(rs) + read_data(rt);
+                            when mflo => data := lo;
+                            when mfhi => data := hi;
+                            when sub => data := read_data(rs) - read_data(rt);
+                            when orop => data := read_data(rs) or read_data(rt));
 
-                    when mflo => data := read_data();
-                    when mfhi => 
-                    when mult => data := 
-                    when sub => data := read_data(rs) - read_data(rt);
-                    when orop =>
-                    when div => 
-                    when slt =>
-                    when others => assert false report "illegal r-type instruction" severity warning;
+                            when slt => if(read_data(rs) < read_data(rt)) then
+                                            data := '1'
+                                        else
+                                            data := '0';
+                                        end if;        
+                            when others => assert false report "illegal r-type instruction" severity warning;
+                        end case;
+                        set_cc_rd(data, cc);
+                        write_data(dst, d0, d1, a0, a1, data);
                 end case;
             when lw =>
             when sw =>

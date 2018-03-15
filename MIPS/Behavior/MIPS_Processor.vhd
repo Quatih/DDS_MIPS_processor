@@ -256,11 +256,12 @@ begin
                 case rtype is 
                     when nop => assert false report "finished calculation" severity failure;                                                  
                     when add => data := read_data(rs) + read_data(rt);
-                    when addi => data := read_data(rs) + read_data(imm);
+
                     when mflo => data := read_data();
                     when mfhi => 
                     when mult => data := 
                     when sub => data := read_data(rs) - read_data(rt);
+                    when orop =>
                     when div => 
                     when slt =>
                     when others => assert false report "illegal r-type instruction" severity warning;
@@ -270,40 +271,10 @@ begin
             when lui =>
             when beq =>
             when ori =>
-            when orop =>
+            when addi => data := read_data(rs) + read_data(imm);
             when bgez =>
             when others => -- Illegal opcode, assert
         end case;
-=======
-        elsif rising_edge(clk) then
-            pc := pc + 1;
-            memory_read(pc, current_instr); -- read instruction
-
-            case opcode is
-                when "000000" => -- R-type
-                    case rtype is 
-                        when nop => assert false report 
-                                    "illegal r-type instruction" severity failure                        
-                        when add => 
-                        when mflo =>
-                        when mfhi =>
-                        when mult =>
-                        when sub =>
-                        when div => 
-                        when slt =>
-                        when orop =>
-                        when others => -- add assert warning
-                    end case;
-                when addi =>
-                when lw =>
-                when sw =>
-                when lui =>
-                when beq =>
-                when ori =>
-                when bgez =>
-                when others => -- Illegal opcode, assert
-            end case;
->>>>>>> 0214e7a75c7cbea8c60c84c6ce0b334d88b15d41
 
         -- load => -- load data memory
         --memory_location_i <= "location";

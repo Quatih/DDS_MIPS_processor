@@ -65,9 +65,9 @@ architecture behaviour of MIPS_Processor is
       variable a1 : word;
       variable d0 : word;
       variable d1 : word;
-      variable muldiv : std_logic_vector(word_length*2 -1 downto 0);
-        alias lo : word is muldiv(word_length*2 -1 downto word_length -1);
-        alias hi : word is muldiv(word_length -1 downto 0);
+      variable lo : word; -- special for mult and div
+      variable hi : word; -- special for mult and div
+      variable tmp : std_logic_vector(word_length*2-1 downto 0);
       variable data : integer; -- temp variable
       variable datareg : word; -- temp variable
       variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
@@ -81,7 +81,7 @@ architecture behaviour of MIPS_Processor is
         alias imm : reg_code IS current_instr(15 downto 0);
         alias rd : reg_code Is current_instr(15 downto 11);
         alias rtype : op_code IS current_instr(5 downto 0);
-      variable tmp : std_logic_vector(word_length*2-1 downto 0);
+      
       procedure set_cc_rd (data : in integer;
                           cc : out std_logic_vector(2 downto 0);
                           regval : out word) is
@@ -202,7 +202,8 @@ architecture behaviour of MIPS_Processor is
       memory_location_i <= (others => '0');
     end memory_write;
 
-    function read_data(source : in reg_code ) return integer is
+    function read_data( source          : in reg_code 
+                        d0, d1, a0, a1  : inout word) return integer is
       variable ret : integer;
     begin
       case source is
@@ -219,9 +220,9 @@ architecture behaviour of MIPS_Processor is
       return ret;
     end read_data;
 
-    procedure write_data(destination : in reg_code;
-                          d0, d1, a0, a1 : inout word;
-                          data : in word)is
+    procedure write_data( destination     : in reg_code;
+                          d0, d1, a0, a1  : inout word;
+                          data            : in word)is
     begin
       case destination is
         when none => NULL;

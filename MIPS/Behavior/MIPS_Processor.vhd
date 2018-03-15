@@ -60,6 +60,99 @@ architecture behaviour of MIPS_Processor is
         alias rt : reg_code IS current_instr(20 downto 16);
         alias imm : reg_code IS current_instr(15 downto 0);
         alias rd : reg_code Is current_instr(15 downto 11);
+
+            PROCEDURE memory_read (addr   : IN natural;
+                           result : OUT std_logic_vector(word_length-1 downto 0)) IS
+    -- Used 'global' signals are:
+    --   clk, reset, ready, read, a_bus, d_busin
+    -- read data from addr in memory
+    BEGIN
+      -- put address on output
+      memory_location_i <= std_logic_vector(to_unsigned(addr,word_length));
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+
+      LOOP -- ready must be low (handshake)
+        IF reset='1' THEN
+          RETURN;
+        END IF;
+        EXIT WHEN ready='0';
+        WAIT UNTIL clk='1';
+      END LOOP;
+
+      read_i <= '1';
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+
+      LOOP
+        WAIT UNTIL clk='1';
+        IF reset='1' THEN
+          RETURN;
+        END IF;
+
+        IF ready='1' THEN
+          result := bus_in;
+          EXIT;
+        END IF;    
+      END LOOP;
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+
+      read_i <= '0'; 
+      memory_location_i <= (others => '0';
+    END memory_read;                         
+
+    PROCEDURE memory_write(addr : IN natural;
+                           data : IN std_logic_vector(word_length-1 downto 0)) IS
+    -- Used 'global' signals are:
+    --   clk, reset, ready, write, a_bus, d_busout
+    -- write data to addr in memory
+      VARIABLE add : bit16;
+    BEGIN
+      -- put address on output
+      memory_location_i <= std_logic_vector(to_unsigned(addr,word_length));
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+
+      LOOP -- ready must be low (handshake)
+        IF reset='1' THEN
+          RETURN;
+        END IF;
+        EXIT WHEN ready='0';
+        WAIT UNTIL clk='1';
+      END LOOP;
+
+      bus_out_i <= data;
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;  
+      write_i <= '1';
+
+      LOOP
+        WAIT UNTIL clk='1';
+        IF reset='1' THEN
+          RETURN;
+        END IF;
+         EXIT WHEN ready='1';  
+      END LOOP;
+      WAIT UNTIL clk='1';
+      IF reset='1' THEN
+        RETURN;
+      END IF;
+      --
+      write_i <= '0';
+      bus_out_i <= (others => '0');
+      memory_location_i <= (others => '0');
+    END memory_write;
 begin
     process (clk, reset)
     variable opcode : std_logic_vector(5 downto 0);
@@ -78,19 +171,19 @@ begin
                 current_instr := bus_in;
                 -- memory_location_i <= pc; -- need to wait for a clock cycle to interface with it after this
                 -- read_i <= '1';
-              -- decode => -- decode instruction
+                -- decode => -- decode instruction
                 
                 case opcode is
-                    "000000" => -- R-type
+                    when "000000" => -- R-type
                         
-                    "001000" => -- I-type
+                    when "001000" => -- I-type
 
-                    "000010" => -- J-type
-                    others => -- do nothing?
+                    when "000010" => -- J-type
+                    when others => -- do nothing?
                 end case;
 
-            -- do whatever
-            -- load => -- load data memory
+             memory_read()
+                -- load => -- load data memory
                 --memory_location_i <= "location";
 
             -- execute =>

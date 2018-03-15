@@ -20,22 +20,22 @@ package processor_types is
     subtype word is std_logic_vector(word_length -1 downto 0);
     subtype op_code is std_logic_vector (5 downto 0);
     subtype reg_code is std_logic_vector (4 downto 0);
-    constant lw : instruction := "100011";
-    constant sw : instruction := "101011";
-    constant beq : instruction := "000100";
-    constant add : instruction := "100000";
-    constant addi : instruction := "001000";
-    constant mult : instruction := "011000";
-    constant ori : instruction := "001101";
-    constant orop : instruction := "100101"; --orop = or operation
-    constant sub : instruction := "100010";
-    constant div : instruction := "011010";
-    constant slt : instruction := "101010";
-    constant mflo : instruction := "010010";
-    constant mfhi : instruction := "010000";
-    constant lui : instruction := "001111";
-    constant nop : instruction := "000000";
-    constant bgez : instruction := "000001";
+    constant lw   : op_code := "100011";
+    constant sw   : op_code := "101011";
+    constant beq  : op_code := "000100";
+    constant add  : op_code := "100000";
+    constant addi : op_code := "001000";
+    constant mult : op_code := "011000";
+    constant ori  : op_code := "001101";
+    constant orop : op_code := "100101"; --orop = or operation
+    constant sub  : op_code := "100010";
+    constant div  : op_code := "011010";
+    constant slt  : op_code := "101010";
+    constant mflo : op_code := "010010";
+    constant mfhi : op_code := "010000";
+    constant lui  : op_code := "001111";
+    constant nop  : op_code := "000000";
+    constant bgez : op_code := "000001";
 
     -- source and dest codes
     constant none : reg_code := "00000";

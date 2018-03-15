@@ -65,6 +65,7 @@ architecture behaviour of MIPS_Processor is
     alias lo : word is muldiv(word_length*2 -1 downto word_length -1);
     alias hi : word is muldiv(word_length -1 downto 0);
   variable data : integer; -- temp variable
+  variable datareg : word; -- temp variable
   variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
     alias cc_n  : std_logic IS cc(2); -- negative
     alias cc_z  : std_logic IS cc(1); -- zero
@@ -77,8 +78,9 @@ architecture behaviour of MIPS_Processor is
     alias rd : reg_code Is current_instr(15 downto 11);
     alias rtype : op_code IS current_instr(5 downto 0);
 
-  procedure set_cc_rd (data : inout word
-                      cc : out std_logic_vector(2 downto 0)) is
+  procedure set_cc_rd (data : in integer
+                      cc : out std_logic_vector(2 downto 0)
+                      regval : out word) is
     constant low  : integer := -2**(word_length - 1);
     constant high : integer := 2**(word_length - 1) - 1;
     begin
@@ -87,7 +89,7 @@ architecture behaviour of MIPS_Processor is
         ASSERT false REPORT "overflow situation in arithmetic operation" SEVERITY 
         note;
         cc_v:='1'; cc_n:='-'; cc_z:='-';
-        data := (others => '-');
+        regval := (others => '-');
       else
         cc_v:='0'; 
         if(data <0) then
@@ -100,6 +102,7 @@ architecture behaviour of MIPS_Processor is
         else
             cc_z = '0';       
         end if;
+        regval := std_logic_vector(to_unsigned(data, word_length));
       end if;
   end set_cc_rd;
 
@@ -151,7 +154,7 @@ architecture behaviour of MIPS_Processor is
   end memory_read;                         
 
   procedure memory_write(addr : in natural;
-                          data : in std_logic_vector(word_length-1 downto 0)) IS
+                          data : in word) IS
   -- Used 'global' signals are:
   --   clk, reset, ready, write, a_bus, d_busout
   -- write data to addr in memory
@@ -215,7 +218,7 @@ architecture behaviour of MIPS_Processor is
 
   procedure write_data(destination : in reg_code;
                         d0, d1, a0, a1 : inout word;
-                        data : in integer)is
+                        data : in word)is
   begin
     case destination is
       when none => NULL;
@@ -242,8 +245,8 @@ begin
         pc := text_base_address; -- starting address to base address
         cc := (others => '0');
         loop
-            wait until clk = '1';
-            exit when reset = '0';
+          wait until clk = '1';
+          exit when reset = '0';
         end loop;
     end if;
     pc := pc + 1;
@@ -254,11 +257,13 @@ begin
         case rtype is 
           when mult | div =>
             case rtype is
-              when mult => tmp := std_logic_vector(to_unsigned(read_data(rs)*read_data(rt), word_length*2));
-                            hi := tmp(word_length*2-1 downto word_length-1);
-                            lo := tmp(word_length-1 downto 0);
-              when div => lo := read_data(rs)/read_data(rt);
-                          hi := read_data(rs) mod read_data(rt);
+              when mult => 
+                tmp := std_logic_vector(to_unsigned(read_data(rs)*read_data(rt), word_length*2));
+                hi := tmp(word_length*2-1 downto word_length-1);
+                lo := tmp(word_length-1 downto 0);
+              when div => 
+                lo := read_data(rs)/read_data(rt);
+                hi := read_data(rs) mod read_data(rt);
             end case;
           when others =>
             case rtype is 
@@ -268,38 +273,44 @@ begin
               when mfhi => data := hi;
               when sub => data := read_data(rs) - read_data(rt);
               when orop => data := read_data(rs) or read_data(rt));
-              when slt => if(read_data(rs) < read_data(rt)) then
-                              data := '1'
-                          else
-                              data := '0';
-                          end if;        
+              when slt => 
+                if(read_data(rs) < read_data(rt)) then
+                    data := '1'
+                else
+                    data := '0';
+                end if;        
               when others => assert false report "illegal r-type instruction" severity warning;
             end case;
-            set_cc_rd(data, cc);
-            write_data(dst, d0, d1, a0, a1, data);
+            set_cc_rd(data, cc, datareg);
+            write_data(rd, d0, d1, a0, a1, datareg);
         end case;
-      when lw =>
-      when sw =>
-      when lui =>
-      when beq =>
-      when ori =>
-      when addi => data := read_data(rs) + read_data(imm);
-      when bgez =>
-      when others => -- Illegal opcode, assert
+      when lw =>  data := memory_read(read_data(to_integer(rs)+to_integer(imm)), datareg);
+                  write_data(rt, d0, d1, a0, a1, datareg)
+      when sw =>  data := read_data(rt);
+                  datareg := std_logic_vector(to_unsigned(data, word_length));
+                  memory_write(read_data(to_integer(rs)+to_integer(imm)), datareg)
+      when lui => datareg := (word_length-1 downto word_length/2-1 => imm, others =>'0');
+                  write_data(rt, d0, d1, a0, a1, datareg)
+      when beq => cc_z := read_data(rs) = read_data(rt);
+                  if(cc_z) then
+                    data := to_integer(imm & "00");
+                    pc := pc + data;
+                  end if;
+      when ori => datareg := (15 downto 0 => imm, others=> '0');
+                  data := read_data(rs);
+                  datareg := std_logic_vector(to_unsigned(data, word_length)) or datareg;
+                  write_data(rt,d0,d1,a0,a1,datareg);
+      when addi =>  data := read_data(rs) + read_data(imm);
+                    set_cc_rd(data, cc, datareg);
+                    write_data(rt,d0,d1,a0,a1,datareg);
+      when bgez =>  data := read_data(rs);
+                    set_cc_rd(data, cc, datareg);
+                    if(cc_z) then
+                      data := to_integer(imm && "00");
+                      pc := pc + data;
+                    end if;
+      when others => assert false report "illegal instruction" severity warning;
     end case;
-
-    -- load => -- load data memory
-    --memory_location_i <= "location";
-
-    -- execute =>
-    -- execute instruction
-    -- store => 
-    -- store results from ALU
-    -- bus_out_i <= "result";
-    -- write_i <= '1';
-    -- increment program counter
-    -- pc := pc + text_base_size;
-    --   state = fetch;
   end seq;
 
   read <= read_i;

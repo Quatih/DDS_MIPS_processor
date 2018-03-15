@@ -39,13 +39,14 @@ package processor_types is
 
     -- source and dest codes
     constant none : reg_code := "00000";
-    constant imm : reg_code := "00001"; -- immediate, store in 
+    constant instr_imm : reg_code := "00001"; -- immediate, store in 
     constant reg_d0 : reg_code := "00010";
     constant reg_d1 : reg_code := "00011";
     constant reg_a0 : reg_code := "00100";
     constant reg_a1 : reg_code := "00101";
     constant a0_addr : reg_code := "00110"; -- memory address in a0
     constant a1_addr : reg_code := "00111"; -- memory address in a1
+    constant reg_Z : reg_code := "01000";
 end processor_types;
 
 
@@ -62,6 +63,11 @@ architecture behaviour of MIPS_Processor is
     variable a1 : word;
     variable d0 : word;
     variable d1 : word;
+    
+        alias lo : word is d1;
+        alias hi : word is d0;
+    variable data : word; -- temp variable
+    
     variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
         alias cc_n  : std_logic IS cc(2); -- negative
         alias cc_z  : std_logic IS cc(1); -- zero
@@ -73,7 +79,6 @@ architecture behaviour of MIPS_Processor is
         alias imm : reg_code IS current_instr(15 downto 0);
         alias rd : reg_code Is current_instr(15 downto 11);
         alias rtype : op_code IS current_instr(5 downto 0);
-
     procedure set_cc (data : in integer)
         constant low  : integer := -2**(word_length - 1);
         constant high : integer := 2**(word_length - 1) - 1;
@@ -191,12 +196,42 @@ architecture behaviour of MIPS_Processor is
       memory_location_i <= (others => '0');
     end memory_write;
 
-    procedure read_data(source : in reg_code )
+    function read_data(source : in reg_code ) return integer is;
+    variable ret : integer;
     begin
         case source is
-
+            when none => ret := 0;
+            when instr_imm => ret := to_integer(imm);
+            when reg_d0 => ret := d0;
+            when reg_d1 => ret := d1;
+            when reg_a0 => ret := a0;
+            when reg_a1 => ret := a1;
+            when a0_addr => memory_read(a0, ret);
+            when a1_addr => memory_read(a1, ret);
+            when others => assert false report "illegal source when reading data" severity warning;
         end case;
+        return ret;
     end read_data;
+
+    procedure write_data(destination : in reg_code;
+                         d0, d1, a0, a1 : inout word;
+                         pc : inout natural;
+                         data : in integer)is
+    begin
+        case destination is
+            when none => ret := 0;
+            when instr_imm => ret := to_integer(imm);
+            when reg_d0 => ret := d0;
+            when reg_d1 => ret := d1;
+            when reg_a0 => ret := a0;
+            when reg_a1 => ret := a1;
+            when a0_addr => memory_read(a0, ret);
+            when a1_addr => memory_read(a1, ret);
+            when reg_Z => memory_write
+            when others => assert false report "illegal source when reading data" severity warning;
+        end case;
+        return ret;
+    end write_data;
 begin
     process
     begin
@@ -211,49 +246,46 @@ begin
                 wait until clk = '1';
                 exit when reset = '0';
             end loop;
+        end if;
+        pc := pc + 1;
+        memory_read(pc, current_instr); -- read instruction
 
-        elsif rising_edge(clk) then
-            pc := pc + 1;
-            memory_read(pc, current_instr); -- read instruction
+        case opcode is
+            when "000000" => -- R-type
+                case rtype is 
+                    when nop => assert false report "finished calculation" severity failure;                                                  
+                    when add => data := read_data(rs) + read_data(rt);
+                    when addi => data := read_data(rs) + read_data(imm);
+                    when mflo => data := read_data();
+                    when mfhi => 
+                    when mult => data := 
+                    when sub => data := read_data(rs) - read_data(rt);
+                    when div => 
+                    when slt =>
+                    when others => assert false report "illegal r-type instruction" severity warning;
+                end case;
+            when lw =>
+            when sw =>
+            when lui =>
+            when beq =>
+            when ori =>
+            when orop =>
+            when bgez =>
+            when others => -- Illegal opcode, assert
+        end case;
 
-            case opcode is
-                when "000000" => -- R-type
-                    case rtype is 
-                        when nop => assert false report 
-                                    "illegal r-type instruction" severity failure                        
-                        when add => 
-                        when addi =>
-                        when mflo =>
-                        when mfhi =>
-                        when mult =>
-                        when sub =>
-                        when div => 
-                        when slt =>
-                        when others => -- add assert warning
-                    end case;
-                when lw =>
-                when sw =>
-                when lui =>
-                when beq =>
-                when ori =>
-                when orop =>
-                when bgez =>
-                when others => -- Illegal opcode, assert
-            end case;
-
-            -- load => -- load data memory
-            --memory_location_i <= "location";
+        -- load => -- load data memory
+        --memory_location_i <= "location";
 
         -- execute =>
         -- execute instruction
         -- store => 
         -- store results from ALU
-            -- bus_out_i <= "result";
-            -- write_i <= '1';
-            -- increment program counter
-            -- pc := pc + text_base_size;
-            --   state = fetch;
-        end if;
+        -- bus_out_i <= "result";
+        -- write_i <= '1';
+        -- increment program counter
+        -- pc := pc + text_base_size;
+        --   state = fetch;
     end seq;
 
     read <= read_i;

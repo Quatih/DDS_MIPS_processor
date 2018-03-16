@@ -54,7 +54,7 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 USE work.processor_types.ALL;
-
+USE work.memory_config.ALL;
 architecture behaviour of MIPS_Processor is
   begin
     process
@@ -67,6 +67,10 @@ architecture behaviour of MIPS_Processor is
       variable d1 : word;
       variable lo : word; -- special for mult and div
       variable hi : word; -- special for mult and div
+      variable rs_reg : word; -- temp register
+      variable rt_reg : word; -- temp register
+      variable rs_int : integer;
+      variable rt_int : integer;
       variable tmp : std_logic_vector(word_length*2-1 downto 0);
       variable data : integer; -- temp variable
       variable datareg : word; -- temp variable
@@ -202,22 +206,21 @@ architecture behaviour of MIPS_Processor is
       memory_location_i <= (others => '0');
     end memory_write;
 
-    function read_data( source          : in reg_code 
-                        d0, d1, a0, a1  : inout word) return integer is
-      variable ret : integer;
+    procedure read_data(source          : in reg_code;
+                        d0, d1, a0, a1  : in word;
+                        ret             : out word ) is
     begin
       case source is
-        when none => ret := 0;
-        when instr_imm => ret := to_integer(imm);
+        when none => ret := (others => '0');
+        when instr_imm => NULL;
         when reg_d0 => ret := d0;
         when reg_d1 => ret := d1;
         when reg_a0 => ret := a0;
         when reg_a1 => ret := a1;
-        when a0_addr => memory_read(a0, ret);
-        when a1_addr => memory_read(a1, ret);
+        -- when a0_addr => memory_read(a0, ret);
+        -- when a1_addr => memory_read(a1, ret);
         when others => assert false report "illegal source when reading data" severity warning;
       end case;
-      return ret;
     end read_data;
 
     procedure write_data( destination     : in reg_code;
@@ -231,9 +234,9 @@ architecture behaviour of MIPS_Processor is
         when reg_d1 => d1 := data;
         when reg_a0 => a0 := data;
         when reg_a1 => a1 := data;
-        when a0_addr => memory_write(a0, data);
-        when a1_addr => memory_write(a1, data);
-          when others => assert false report "illegal source when reading data" severity warning;
+        -- when a0_addr => memory_write(a0, data);
+        -- when a1_addr => memory_write(a1, data);
+        when others => assert false report "illegal source when reading data" severity warning;
       end case;
     end write_data;
       
@@ -256,63 +259,94 @@ architecture behaviour of MIPS_Processor is
     case opcode is
       when "000000" => -- R-type
         case rtype is 
-          when mult | div =>
+          when nop => assert false report "finished calculation" severity failure; 
+          when mfhi | mflo => -- access lo, hi
+            case rtype is 
+              when mflo => datareg := lo;
+              when mfhi => datareg := hi;
+              when others => NULL;
+            end case;
+            write_data(rd, d0, d1, a0, a1, datareg);
+          when mult | div => --store in lo, hi
+            read_data(rs, d0, d1, a0, a1, rs_reg);
+            rs_int := to_integer(signed(rs_reg));
+            read_data(rt, d0, d1, a0, a1, rt_reg);
+            rt_int := to_integer(signed(rt_reg));
             case rtype is
               when mult => 
-                tmp := std_logic_vector(to_unsigned(read_data(rs)*read_data(rt), word_length*2));
+                tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
                 hi := tmp(word_length*2-1 downto word_length-1);
                 lo := tmp(word_length-1 downto 0);
               when div => 
-                lo := read_data(rs)/read_data(rt);
-                hi := read_data(rs) mod read_data(rt);
+                datareg := std_logic_vector(to_signed(rs_int/rt_int, word_length));
+                lo := datareg;
+                datareg := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
+                hi := datareg;
+              when others => NULL;
             end case;
+          when orop =>
+            read_data(rs, d0, d1, a0, a1, rs_reg);
+            read_data(rt, d0, d1, a0, a1, rt_reg);
+            datareg := rs_reg or rt_reg;
+            write_data(rd, d0, d1, a0, a1, datareg);
           when others =>
-            case rtype is 
-              when nop => assert false report "finished calculation" severity failure;                                                  
-              when add => data := read_data(rs) + read_data(rt);
-              when mflo => data := lo;
-              when mfhi => data := hi;
-              when sub => data := read_data(rs) - read_data(rt);
-              when orop => data := read_data(rs) or read_data(rt));
+            read_data(rs, d0, d1, a0, a1, rs_reg);
+            rs_int := to_integer(signed(rs_reg));
+            read_data(rt, d0, d1, a0, a1, rt_reg);
+            rt_int := to_integer(signed(rt_reg));
+            case rtype is                                                  
+              when add => data := rs_int + rt_int;
+              when sub => data := rs_int - rt_int;
               when slt => 
-                if(read_data(rs) < read_data(rt)) then
-                    data := '1'
+                if(rs_int < rt_int) then
+                    data := 0;
                 else
-                    data := '0';
+                    data := 1;
                 end if;        
               when others => assert false report "illegal r-type instruction" severity warning;
             end case;
             set_cc_rd(data, cc, datareg);
             write_data(rd, d0, d1, a0, a1, datareg);
         end case;
-      when lw =>  data := memory_read(read_data(to_integer(rs)+to_integer(imm)), datareg);
-                  write_data(rt, d0, d1, a0, a1, datareg)
-      when sw =>  data := read_data(rt);
-                  datareg := std_logic_vector(to_unsigned(data, word_length));
-                  memory_write(read_data(to_integer(rs)+to_integer(imm)), datareg)
-      when lui => datareg := (word_length-1 downto word_length/2-1 => imm, others =>'0');
-                  write_data(rt, d0, d1, a0, a1, datareg)
-      when beq => cc_z := read_data(rs) = read_data(rt);
-                  if(cc_z) then
-                    data := to_integer(imm & "00");
-                    pc := pc + data;
-                  end if;
-      when ori => datareg := (15 downto 0 => imm, others=> '0');
-                  data := read_data(rs);
-                  datareg := std_logic_vector(to_unsigned(data, word_length)) or datareg;
-                  write_data(rt,d0,d1,a0,a1,datareg);
-      when addi =>  data := read_data(rs) + read_data(imm);
-                    set_cc_rd(data, cc, datareg);
-                    write_data(rt,d0,d1,a0,a1,datareg);
-      when bgez =>  data := read_data(rs);
-                    set_cc_rd(data, cc, datareg);
-                    if(cc_z) then
-                      data := to_integer(imm && "00");
-                      pc := pc + data;
-                    end if;
-      when others => assert false report "illegal instruction" severity warning;
+      when sw | beq => --uses rt_int
+        read_data(rs, d0, d1, a0, a1, rs_reg);
+        rs_int := to_integer(signed(rs_reg));
+        read_data(rt, d0, d1, a0, a1, rt_reg);
+        rt_int := to_integer(signed(rt_reg));
+        case opcode is
+          when sw =>  data := rs_int+to_integer(signed(imm));
+                      memory_write(data, rt_reg);
+          when beq => cc_z := (rs_int = rt_int);
+                      if(cc_z) then
+                        data := to_integer(signed(imm & "00"));
+                        pc := pc + data;
+                      end if;
+          when others => NULL;
+        end case;
+      when others => -- uses only rs_int
+        read_data(rs, d0, d1, a0, a1, rs_reg);
+        rs_int := to_integer(signed(rs_reg));
+        case opcode is
+          when lw =>  data := memory_read(rs_int+to_integer(signed(imm)), datareg);
+                      write_data(rt, d0, d1, a0, a1, datareg)                  
+          when lui => datareg := (word_length-1 downto word_length/2-1 => imm, others =>'0');
+                      write_data(rt, d0, d1, a0, a1, datareg)
+          when ori => datareg := (15 downto 0 => imm, others=> '0');
+                      datareg := rs_reg or datareg;
+                      write_data(rt,d0,d1,a0,a1,datareg);
+          when addi =>  data := rs_int + to_integer(signed(imm));
+                        set_cc_rd(data, cc, datareg);
+                        write_data(rt,d0,d1,a0,a1,datareg);
+          when bgez =>  set_cc_rd(rs_int, cc, datareg);
+                        if(cc_z) then
+                          data := to_integer(signed(imm && "00"));
+                          pc := pc + data;
+                        end if;
+          when others => assert false report "illegal instruction" severity warning;
+        end case;
+
     end case;
-  end seq;
+  end process;
 
   read <= read_i;
   write <= write_i;

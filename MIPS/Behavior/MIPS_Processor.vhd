@@ -3,14 +3,14 @@ USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 entity MIPS_Processor IS
   generic (word_length : integer);
-  port (clk : in std_ulogic;
-        reset : in std_ulogic;
-        bus_in : in std_logic_vector(word_length-1 downto 0);
+  port (bus_in : in std_logic_vector(word_length-1 downto 0);
         bus_out : out std_logic_vector(word_length-1 downto 0);
         memory_location : out std_logic_vector(word_length-1 downto 0);
-        read : out std_ulogic;
+        clk : in std_ulogic;
         write : out std_ulogic;
-        ready : in std_ulogic
+        read : out std_ulogic;
+        ready : in std_ulogic;
+        reset : in std_ulogic
         );
 end MIPS_Processor;
 
@@ -157,7 +157,7 @@ architecture behaviour of MIPS_Processor is
       end if;
 
       read <= '0'; 
-      memory_location <= (others => '0');
+      memory_location <= (others => '-');
     end memory_read;                         
 
     procedure memory_write(addr : in natural;
@@ -241,20 +241,21 @@ architecture behaviour of MIPS_Processor is
       
   begin
     if reset = '1' then
-        read <= '0';
-        write <= '0';
-        bus_out <= (others => '0');
-        memory_location <= (others => '0');
-        pc := text_base_address; -- starting address to base address
-        cc := (others => '0');
-        loop
-          wait until clk = '1';
-          exit when reset = '0';
-        end loop;
+      read <= '0';
+      write <= '0';
+      -- bus_out <= (others => '0');
+      -- memory_location <= (others => '0');
+      pc := text_base_address; -- starting address to base address
+      cc := (others => '0');
+      loop
+        wait until clk = '1';
+        exit when reset = '0';
+      end loop;
     end if;
-    pc := pc + 1;
+    
     memory_read(pc, current_instr); -- read instruction
-
+    if (reset /='1') then
+    pc := pc + 4;
     case opcode is
       when "000000" => -- R-type
         case rtype is 
@@ -274,7 +275,7 @@ architecture behaviour of MIPS_Processor is
             case rtype is
               when mult => 
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
-                hi := tmp(word_length*2-1 downto word_length-1);
+                hi := tmp(word_length*2-1 downto word_length);
                 lo := tmp(word_length-1 downto 0);
               when div => 
                 datareg := std_logic_vector(to_signed(rs_int/rt_int, word_length));
@@ -334,7 +335,7 @@ architecture behaviour of MIPS_Processor is
                       memory_read(data, datareg);
                       write_data(rt, d0, d1, a0, a1, datareg);                  
           when lui => datareg := (others =>'0');
-                      datareg(word_length-1 downto word_length/2-1) := imm;
+                      datareg(word_length-1 downto word_length/2) := imm;
                       write_data(rt, d0, d1, a0, a1, datareg);
           when ori => datareg := (others=> '0');
                       datareg(15 downto 0) := imm;
@@ -352,6 +353,7 @@ architecture behaviour of MIPS_Processor is
         end case;
 
     end case;
+    end if;
   end process;
 
 end behaviour;

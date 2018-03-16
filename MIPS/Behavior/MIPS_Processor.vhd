@@ -2,9 +2,9 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 entity MIPS_Processor IS
-  generic (word_length : integer := 32 );
-  port (clk : in std_logic;
-        reset : in std_logic;
+  generic (word_length : integer);
+  port (clk : in std_ulogic;
+        reset : in std_ulogic;
         bus_in : in std_logic_vector(word_length-1 downto 0);
         bus_out : out std_logic_vector(word_length-1 downto 0);
         memory_location : out std_logic_vector(word_length-1 downto 0);
@@ -56,8 +56,6 @@ USE ieee.numeric_std.ALL;
 USE work.processor_types.ALL;
 USE work.memory_config.ALL;
 architecture behaviour of MIPS_Processor is
-  signal bus_out_i, memory_location_i : word;
-  signal read_i, write_i: std_ulogic;
   begin
     process
       variable pc : natural;
@@ -122,7 +120,7 @@ architecture behaviour of MIPS_Processor is
     begin
       -- put address on output
 
-      memory_location_i <= std_logic_vector(to_unsigned(addr,word_length));
+      memory_location <= std_logic_vector(to_unsigned(addr,word_length));
       wait until clk='1';
       if reset='1' then
         return;
@@ -136,7 +134,7 @@ architecture behaviour of MIPS_Processor is
         wait until clk='1';
       end loop;
 
-      read_i <= '1';
+      read <= '1';
       wait until clk='1';
       if reset='1' then
         return;
@@ -158,8 +156,8 @@ architecture behaviour of MIPS_Processor is
         return;
       end if;
 
-      read_i <= '0'; 
-      memory_location_i <= (others => '0');
+      read <= '0'; 
+      memory_location <= (others => '0');
     end memory_read;                         
 
     procedure memory_write(addr : in natural;
@@ -169,7 +167,7 @@ architecture behaviour of MIPS_Processor is
     -- write data to addr in memory
     begin
       -- put address on output
-      memory_location_i <= std_logic_vector(to_unsigned(addr,word_length));
+      memory_location <= std_logic_vector(to_unsigned(addr,word_length));
       wait until clk='1';
       if reset='1' then
         return;
@@ -183,12 +181,12 @@ architecture behaviour of MIPS_Processor is
         wait until clk='1';
       end loop;
 
-      bus_out_i <= data;
+      bus_out <= data;
       wait until clk='1';
       if reset='1' then
         return;
       end if;  
-      write_i <= '1';
+      write <= '1';
 
       loop
         wait until clk='1';
@@ -202,9 +200,9 @@ architecture behaviour of MIPS_Processor is
         return;
       end if;
       --
-      write_i <= '0';
-      bus_out_i <= (others => '0');
-      memory_location_i <= (others => '0');
+      write <= '0';
+      bus_out <= (others => '0');
+      memory_location <= (others => '0');
     end memory_write;
 
     procedure read_data(source          : in reg_code;
@@ -243,10 +241,10 @@ architecture behaviour of MIPS_Processor is
       
   begin
     if reset = '1' then
-        read_i <= '0';
-        write_i <= '0';
-        bus_out_i <= (others => '0');
-        memory_location_i <= (others => '0');
+        read <= '0';
+        write <= '0';
+        bus_out <= (others => '0');
+        memory_location <= (others => '0');
         pc := text_base_address; -- starting address to base address
         cc := (others => '0');
         loop
@@ -356,8 +354,4 @@ architecture behaviour of MIPS_Processor is
     end case;
   end process;
 
-  read <= read_i;
-  write <= write_i;
-  bus_out <= bus_out_i;
-  memory_location <= memory_location_i;
 end behaviour;

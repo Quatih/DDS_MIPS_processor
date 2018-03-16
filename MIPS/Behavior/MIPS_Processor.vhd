@@ -67,11 +67,11 @@ architecture behaviour of MIPS_Processor is
       variable hi : word; -- special for mult and div
       variable rs_reg : word; -- temp register
       variable rt_reg : word; -- temp register
-      variable rs_int : integer;
-      variable rt_int : integer;
+      variable rs_int : integer; -- temp integer representation
+      variable rt_int : integer; -- temp integer representation
       variable tmp : std_logic_vector(word_length*2-1 downto 0);
-      variable data : integer; -- temp variable
-      variable datareg : word; -- temp variable
+      variable data : integer; -- temp integer
+      variable datareg : word; -- temp register
       variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
         alias cc_n  : std_logic IS cc(2); -- negative
         alias cc_z  : std_logic IS cc(1); -- zero

@@ -29,7 +29,7 @@ package processor_types is
   constant mult : op_code := "011000";
   constant ori  : op_code := "001101";
   constant orop : op_code := "100101"; --orop = or operation
-  constant subop  : op_code := "100010";
+  constant subop  : op_code := "100010"; -- sub operation
   constant div  : op_code := "011010";
   constant slt  : op_code := "101010";
   constant mflo : op_code := "010010";
@@ -40,7 +40,7 @@ package processor_types is
 
   -- source and dest codes
   constant none : reg_code := "00000";
-  constant pseudo_instr : reg_code := "00001"; -- immediate, store in 
+  constant pseudres : reg_code := "00001"; 
   constant reg_d0 : reg_code := "00010";
   constant reg_d1 : reg_code := "00011";
   constant reg_a0 : reg_code := "00100";

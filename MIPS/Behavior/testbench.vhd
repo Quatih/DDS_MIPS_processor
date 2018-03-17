@@ -1,7 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use work.processor_types.all;
-
+use work.memory_config.all;
 entity testbench is
   generic (word_length : integer := 32);
 end testbench;

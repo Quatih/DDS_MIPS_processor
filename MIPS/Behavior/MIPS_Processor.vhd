@@ -40,13 +40,21 @@ package processor_types is
 
   -- source and dest codes
   constant none : reg_code := "00000";
-  constant pseudres : reg_code := "00001"; 
-  constant reg_d0 : reg_code := "00010";
-  constant reg_d1 : reg_code := "00011";
-  constant reg_a0 : reg_code := "00100";
-  constant reg_a1 : reg_code := "00101";
-  constant a0_addr : reg_code := "00110"; -- memory address in a0
-  constant a1_addr : reg_code := "00111"; -- memory address in a1
+  constant r1 : reg_code := "00001"; 
+  constant r2 : reg_code := "00010";
+  constant r3: reg_code := "00011";
+  constant r4 : reg_code := "00100";
+  constant r5 : reg_code := "00101";
+  constant r6 : reg_code := "00110";
+  constant r7 : reg_code := "00111";
+  constant r8 : reg_code := "01000";
+  constant r9 : reg_code := "01001";
+  constant r10 : reg_code := "01010";
+  constant r11 : reg_code := "01011";
+  constant r12 : reg_code := "01100";
+  constant r13 : reg_code := "01101";
+  constant r14 : reg_code := "01110";
+  constant r15 : reg_code := "01111";
 end processor_types;
 
 
@@ -58,11 +66,10 @@ USE work.memory_config.ALL;
 architecture behaviour of MIPS_Processor is
   begin
     process
+      type register_file is array (0 to 31) 
+                    of std_logic_vector(word_length-1 downto 0);
       variable pc : natural;
-      variable a0 : word;
-      variable a1 : word;
-      variable d0 : word;
-      variable d1 : word;
+      variable regfile : register_file;
       variable lo : word; -- special for mult and div
       variable hi : word; -- special for mult and div
       variable rs_reg : word; -- temp register
@@ -94,7 +101,7 @@ architecture behaviour of MIPS_Processor is
         then -- overflow
           ASSERT false REPORT "overflow situation in arithmetic operation" SEVERITY 
           note;
-          cc_v:='1'; cc_n:='-'; cc_z:='-';
+          cc_v:='1'; cc_n:='-'; cc_z:='-'; -- correct?
           regval := (others => '-');
         else
           cc_v:='0'; 
@@ -201,42 +208,30 @@ architecture behaviour of MIPS_Processor is
       end if;
       --
       write <= '0';
-      bus_out <= (others => '0');
-      memory_location <= (others => '0');
+      bus_out <= (others => '-');
+      memory_location <= (others => '-');
     end memory_write;
 
     procedure read_data(source          : in reg_code;
-                        d0, d1, a0, a1  : in word;
+                        regfile         : in register_file;
                         ret             : out word ) is
     begin
-      case source is
-        when none => ret := (others => '0');
-        when pseudo_instr => NULL;
-        when reg_d0 => ret := d0;
-        when reg_d1 => ret := d1;
-        when reg_a0 => ret := a0;
-        when reg_a1 => ret := a1;
-        -- when a0_addr => memory_read(a0, ret);
-        -- when a1_addr => memory_read(a1, ret);
-        when others => assert false report "illegal source when reading data" severity warning;
-      end case;
+      if(to_integer(unsigned(source)) > 15) then
+        assert false report "Wrong access to register" severity failure;
+      else
+        ret := regfile(to_integer(unsigned(source)));
+      end if;
     end read_data;
 
     procedure write_data( destination     : in reg_code;
-                          d0, d1, a0, a1  : inout word;
+                          regfile         : out register_file;
                           data            : in word)is
     begin
-      case destination is
-        when none => NULL;
-        when pseudo_instr => NULL;
-        when reg_d0 => d0 := data;
-        when reg_d1 => d1 := data;
-        when reg_a0 => a0 := data;
-        when reg_a1 => a1 := data;
-        -- when a0_addr => memory_write(a0, data);
-        -- when a1_addr => memory_write(a1, data);
-        when others => assert false report "illegal source when reading data" severity warning;
-      end case;
+      if(to_integer(unsigned(destination)) > 15) then
+        assert false report "Wrong access to register" severity failure;
+      else
+        regfile(to_integer(unsigned(destination))) := data;
+      end if;
     end write_data;
       
   begin
@@ -247,6 +242,10 @@ architecture behaviour of MIPS_Processor is
       -- memory_location <= (others => '0');
       pc := text_base_address; -- starting address to base address
       cc := (others => '0');
+      regfile := (others => (others => '0'));
+      lo := (others => '0');
+      hi := (others => '0');
+      bus_out <= (others => '-');
       loop
         wait until clk = '1';
         exit when reset = '0';
@@ -266,11 +265,11 @@ architecture behaviour of MIPS_Processor is
               when mfhi => datareg := hi;
               when others => NULL;
             end case;
-            write_data(rd, d0, d1, a0, a1, datareg);
+            write_data(rd, regfile, datareg);
           when mult | div => --store in lo, hi
-            read_data(rs, d0, d1, a0, a1, rs_reg);
+            read_data(rs, regfile, rs_reg);
             rs_int := to_integer(signed(rs_reg));
-            read_data(rt, d0, d1, a0, a1, rt_reg);
+            read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
             case rtype is
               when mult => 
@@ -283,33 +282,33 @@ architecture behaviour of MIPS_Processor is
               when others => NULL;
             end case;
           when orop =>
-            read_data(rs, d0, d1, a0, a1, rs_reg);
-            read_data(rt, d0, d1, a0, a1, rt_reg);
+            read_data(rs, regfile, rs_reg);
+            read_data(rt, regfile, rt_reg);
             datareg := rs_reg or rt_reg;
-            write_data(rd, d0, d1, a0, a1, datareg);
+            write_data(rd, regfile, datareg);
           when others =>
-            read_data(rs, d0, d1, a0, a1, rs_reg);
+            read_data(rs, regfile, rs_reg);
             rs_int := to_integer(signed(rs_reg));
-            read_data(rt, d0, d1, a0, a1, rt_reg);
+            read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
             case rtype is                                                  
               when add => data := rs_int + rt_int;
               when subop => data := rs_int - rt_int;
               when slt => 
                 if(rs_int < rt_int) then
-                    data := 0;
-                else
                     data := 1;
+                else
+                    data := 0;
                 end if;        
               when others => assert false report "illegal r-type instruction" severity warning;
             end case;
             set_cc_rd(data, cc, datareg);
-            write_data(rd, d0, d1, a0, a1, datareg);
+            write_data(rd, regfile, datareg);
         end case;
       when sw | beq => --uses rt_int
-        read_data(rs, d0, d1, a0, a1, rs_reg);
+        read_data(rs, regfile, rs_reg);
         rs_int := to_integer(signed(rs_reg));
-        read_data(rt, d0, d1, a0, a1, rt_reg);
+        read_data(rt, regfile, rt_reg);
         rt_int := to_integer(signed(rt_reg));
         case opcode is
           when sw =>  data := rs_int+to_integer(signed(imm));
@@ -320,31 +319,31 @@ architecture behaviour of MIPS_Processor is
                         cc_z := '0';
                       end if;
                       if(cc_z = '1') then
-                        data := to_integer(signed(imm & "00"));
+                        data := to_integer(signed(std_logic_vector'(imm & "00")));
                         pc := pc + data;
                       end if;
           when others => NULL;
         end case;
       when others => -- uses only rs_int
-        read_data(rs, d0, d1, a0, a1, rs_reg);
+        read_data(rs, regfile, rs_reg);
         rs_int := to_integer(signed(rs_reg));
         case opcode is
           when lw =>  data := rs_int+to_integer(signed(imm));
                       memory_read(data, datareg);
-                      write_data(rt, d0, d1, a0, a1, datareg);                  
-          when lui => datareg := (others =>'0');
+                      write_data(rt, regfile, datareg);                  
+          when lui => datareg := (others =>'0');  
                       datareg(word_length-1 downto word_length/2) := imm;
-                      write_data(rt, d0, d1, a0, a1, datareg);
+                      write_data(rt, regfile, datareg);
           when ori => datareg := (others=> '0');
                       datareg(15 downto 0) := imm;
                       datareg := rs_reg or datareg;
-                      write_data(rt,d0,d1,a0,a1,datareg);
+                      write_data(rt,regfile,datareg);
           when addi =>  data := rs_int + to_integer(signed(imm));
                         set_cc_rd(data, cc, datareg);
-                        write_data(rt,d0,d1,a0,a1,datareg);
+                        write_data(rt,regfile,datareg);
           when bgez =>  set_cc_rd(rs_int, cc, datareg);
                         if(cc_z = '1') then
-                          data := to_integer(signed(imm & "00"));
+                          data := to_integer(signed(std_logic_vector'(imm & "00")));
                           pc := pc + data;
                         end if;
           when others => assert false report "illegal instruction" severity warning;

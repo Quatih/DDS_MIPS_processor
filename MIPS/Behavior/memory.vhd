@@ -9,7 +9,7 @@
 --  
 -- read from memory
 --
---         data read from memory valid
+--         data read from memory valid ----
 --              <--------> 
 --
 --       +---------------+

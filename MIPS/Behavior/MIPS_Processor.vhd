@@ -278,10 +278,8 @@ architecture behaviour of MIPS_Processor is
                 hi := tmp(word_length*2-1 downto word_length);
                 lo := tmp(word_length-1 downto 0);
               when div => 
-                datareg := std_logic_vector(to_signed(rs_int/rt_int, word_length));
-                lo := datareg;
-                datareg := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
-                hi := datareg;
+                lo := std_logic_vector(to_signed(rs_int/rt_int, word_length));
+                hi := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
               when others => NULL;
             end case;
           when orop =>

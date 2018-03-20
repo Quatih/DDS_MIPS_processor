@@ -175,6 +175,13 @@ architecture algorithm of MIPS_Processor is
       end if;
     end write_data;
       
+    -- return a word based on input vector, sign extended.
+    function to_word_length_se(invector : in std_logic_vector) return word is
+      variable tmp : word; -- assign tmp to the msb of invector
+    begin
+      tmp := resize(signed(invector), word_length);
+      return tmp;
+    end to_word_length;
   begin
     if reset = '1' then
       read <= '0';
@@ -214,8 +221,8 @@ architecture algorithm of MIPS_Processor is
             case rtype is
               when mult => 
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
-                hi := tmp(word_length*2-1 downto word_length);
                 lo := tmp(word_length-1 downto 0);
+                hi := tmp(word_length*2-1 downto word_length);
               when div => 
                 lo := std_logic_vector(to_signed(rs_int/rt_int, word_length));
                 hi := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
@@ -288,9 +295,7 @@ architecture algorithm of MIPS_Processor is
                         end if;
           when others => assert false report "illegal instruction" severity warning;
         end case;
-
     end case;
     end if;
   end process;
-
 end behaviour;

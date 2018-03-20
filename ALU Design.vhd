@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 entity alu is
   generic (w : natural :=64);
   port (op1, op2 : in std_logic_vector(w-1 downto 0);
-        ins : in std_logic_vector(7 downto 0); -- equivalent to ins (mul,div,slt,beq,bgez,add,sub, or)
+        ins : in std_logic_vector(3 downto 0);       -- 8 combinations equivalent to mul,div,slt,beq,bgez,add,sub,or
         start : in std_logic;
         rst : in std_logic;
         clk : in std_logic;
@@ -28,24 +28,25 @@ begin
         op1i <= unsigned (op1);
         op2i <= unsigned (op2);
         case ins
-          when "10000000" => res <=                                                       --multiplication algorithm
-          when "01000000" => res <=                                                         --division algorithm
-          when "00100000" => if op1i < op2i then
+          when "1000" => res <=                                                       --multiplication algorithm
+          when "0111" => res <=                                                         --division algorithm
+          when "0110" => if op1i < op2i then
                               res <= std_logic_vector(res'right => '1', others =>'0');
                             else  
                               res <= default;                                              --slt algorithm
-          when "00010000" => if op1i = op2i then
+          when "0101" => if op1i = op2i then
                               res <= std_logic_vector(res'right => '1', others =>'0');
                             else  
                               res <= default;                                      --beq algorithm. Branch if res=1
-          when "00001000" => if op1 >= std_logic_vector(others => '0') then
+          when "0100" => if op1 >= std_logic_vector(others => '0') then
                               res <= std_logic_vector(res'right => '1', others =>'0');
                             else  
                               res <= default;                                    --bgez algorithm. Branch if res=1
-          when "00000100" => res <= op1i + op2i;                                            --add algorithm
-          when "00000010" => op2i := not(op2i)+'1';
+          when "0011" => res <= op1i + op2i;                                            --add algorithm
+          when "0010" => op2i := not(op2i)+'1';
                             res <= op1 + op2;                                              --sub algorithm
-          when "00000001" => res <= op1i or op2i;                                          --or operation
+          when "0001" => res <= op1i or op2i;                                          --or operation
+          when others => NULL;
         end case;
       end if;
     end if;

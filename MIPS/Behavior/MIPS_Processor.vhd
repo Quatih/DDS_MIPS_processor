@@ -250,10 +250,8 @@ architecture behaviour of MIPS_Processor is
         wait until clk = '1';
         exit when reset = '0';
       end loop;
-    end if;
-    
+    else
     memory_read(pc, current_instr); -- read instruction
-    if (reset /='1') then
     pc := pc + 4;
     case opcode is
       when "000000" => -- R-type

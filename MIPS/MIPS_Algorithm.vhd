@@ -20,7 +20,7 @@ architecture algorithm of MIPS_Processor is
       variable tmp : std_logic_vector(word_length*2-1 downto 0);
       variable data : integer; -- temp integer
       variable datareg : word; -- temp register
-      variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
+      variable cc : cc_type; -- clear condition code register;
         alias cc_n  : std_logic IS cc(2); -- negative
         alias cc_z  : std_logic IS cc(1); -- zero
         alias cc_v  : std_logic IS cc(0); -- overflow/compare
@@ -33,7 +33,7 @@ architecture algorithm of MIPS_Processor is
         alias rtype : op_code IS current_instr(5 downto 0);
       
       procedure set_cc_rd (data : in integer;
-                          cc : out std_logic_vector(2 downto 0);
+                          cc : out cc_type;
                           regval : out word) is
         constant low  : integer := -2**(word_length - 1);
         constant high : integer := 2**(word_length - 1) - 1;
@@ -176,12 +176,49 @@ architecture algorithm of MIPS_Processor is
     end write_data;
       
     -- return a word based on input vector, sign extended.
-    function to_word_length_se(invector : in std_logic_vector) return word is
-      variable tmp : word; -- assign tmp to the msb of invector
+    function to_word_length_se(invector : std_logic_vector) return word is
     begin
-      tmp := resize(signed(invector), word_length);
-      return tmp;
-    end to_word_length;
+      return resize(signed(invector), word_length);
+    end to_word_length_se;
+
+    function addvectors(a, b : word) return word is
+        variable ret : signed (word_length-1 downto 0);
+      begin
+        ret := signed(a) + signed(b); 
+      return std_logic_vector(ret); 
+    end addvectors;
+
+    function subvectors(a, b : word) return word is
+      variable ret : signed (word_length-1 downto 0);
+    begin
+      ret := signed(a) - signed(b); 
+    return std_logic_vector(ret); 
+    end subvectors;
+
+    -- Shift word left
+    function shiftleft (a : word, num : integer) return word is
+        variable ret : word := (others=>'0');
+      begin
+        ret(word_length -1 downto 0+num) := a(word_length - 1 - num downto 0); 
+        return ret;
+    end shiftleft;
+
+    -- Arithmetic shift word right
+    function shiftright (a : word, num : integer) return word is
+      variable ret : word;
+    begin
+      ret := (word_length -1 - num downto 0 => a(word_length - 1 downto num), others => a'left); 
+      return ret;
+    end shiftright;
+
+    procedure set_cc_comp ( a, b : in word; 
+                            cc : out cc_type;)
+    begin
+      if(a=b) then  
+        cc_v := '1';
+      else
+        cc_v := '0';
+      end if;
   begin
     if reset = '1' then
       read <= '0';

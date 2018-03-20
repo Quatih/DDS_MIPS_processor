@@ -157,7 +157,7 @@ architecture behaviour of MIPS_Processor is
                         regfile         : in register_file;
                         ret             : out word ) is
     begin
-      if((unsigned(source)) > 31) then
+      if((unsigned(source)) > regfile'high) then
         assert false report "Wrong access to register" severity failure;
       else
         ret := regfile(to_integer(unsigned(source)));
@@ -168,7 +168,7 @@ architecture behaviour of MIPS_Processor is
                           regfile         : out register_file;
                           data            : in word)is
     begin
-      if((unsigned(destination)) > 31) then
+      if((unsigned(destination)) > regfile'high) then
         assert false report "Wrong access to register" severity failure;
       else
         regfile(to_integer(unsigned(destination))) := data;

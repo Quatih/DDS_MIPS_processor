@@ -6,6 +6,7 @@ package processor_types is
   subtype word is std_logic_vector(31 downto 0);
   subtype op_code is std_logic_vector (5 downto 0);
   subtype reg_code is std_logic_vector (4 downto 0);
+  subtype cc_type is std_logic_vector (2 downto 0);
   constant lw   : op_code := "100011";
   constant sw   : op_code := "101011";
   constant beq  : op_code := "000100";

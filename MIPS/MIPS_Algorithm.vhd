@@ -31,7 +31,9 @@ architecture algorithm of MIPS_Processor is
         alias rd : reg_code Is current_instr(15 downto 11);
         alias imm : std_logic_vector(15 downto 0) IS current_instr(15 downto 0);
         alias rtype : op_code IS current_instr(5 downto 0);
-      
+      constant one : word := (0 => '1', others =>'0');
+      constant zero : word := (others => '0');
+      constant dontcare : word := (others => '-');
       procedure set_cc_rd (data : in integer;
                           cc : out cc_type;
                           regval : out word) is
@@ -42,8 +44,8 @@ architecture algorithm of MIPS_Processor is
         then -- overflow
           ASSERT false REPORT "overflow situation in arithmetic operation" SEVERITY 
           note;
-          cc_v:='1'; cc_n:='-'; cc_z:='-'; -- correct?
-          regval := (others => '-');
+          cc_v:='1'; cc_n:='-'; cc_z:='-';
+          regval := dontcare;
         else
           cc_v:='0'; 
           if(data <0) then
@@ -60,8 +62,32 @@ architecture algorithm of MIPS_Processor is
         end if;
     end set_cc_rd;
 
+    procedure set_cc_equal ( a, b : in word; cc : out cc_type) is
+    begin
+      if(a=b) then  
+        cc_v := '1';
+      else
+        cc_v := '0';
+      end if;
+    end set_cc_equal;
+
+    procedure set_cc_less ( a, b : in word; cc : out cc_type) is
+    begin
+      if(a<b) then  
+        cc_v := '1';
+      else
+        cc_v := '0';
+      end if;
+    end set_cc_less;
+
+    function orvectors (a, b : in std_logic_vector) return word is
+      variable tmp : word := (others =:> '0');
+    begin
+      tmp
+    end orvectors
+
     procedure memory_read (addr   : in natural;
-                            result : out word) IS
+                            result : out word) is
     -- Used 'global' signals are:
     --   clk, reset, ready, read, a_bus, d_busin
     -- read data from addr in memory
@@ -105,11 +131,11 @@ architecture algorithm of MIPS_Processor is
       end if;
 
       read <= '0'; 
-      memory_location <= (others => '-');
+      memory_location <= dontcare;
     end memory_read;                         
 
     procedure memory_write(addr : in natural;
-                            data : in word) IS
+                            data : in word) is
     -- Used 'global' signals are:
     --   clk, reset, ready, write, a_bus, d_busout
     -- write data to addr in memory
@@ -149,15 +175,15 @@ architecture algorithm of MIPS_Processor is
       end if;
       --
       write <= '0';
-      bus_out <= (others => '-');
-      memory_location <= (others => '-');
+      bus_out <= dontcare;
+      memory_location <= dontcare;
     end memory_write;
 
     procedure read_data(source          : in reg_code;
                         regfile         : in register_file;
-                        ret             : out word ) is
+                        ret             : out word) is
     begin
-      if(unsigned(source) > 31) then
+      if(unsigned(source) > regfile'high) then
         assert false report "Wrong access to register" severity failure;
       else
         ret := regfile(to_integer(unsigned(source)));
@@ -166,9 +192,9 @@ architecture algorithm of MIPS_Processor is
 
     procedure write_data( destination     : in reg_code;
                           regfile         : out register_file;
-                          data            : in word)is
+                          data            : in word) is
     begin
-      if(unsigned(destination) > 31) then
+      if(unsigned(destination) > regfile'high) then
         assert false report "Wrong access to register" severity failure;
       else
         regfile(to_integer(unsigned(destination))) := data;
@@ -197,7 +223,7 @@ architecture algorithm of MIPS_Processor is
 
     -- Shift word left
     function shiftleft (a : word, num : integer) return word is
-        variable ret : word := (others=>'0');
+        variable ret : word := zero;
       begin
         ret(word_length -1 downto 0+num) := a(word_length - 1 - num downto 0); 
         return ret;
@@ -211,14 +237,7 @@ architecture algorithm of MIPS_Processor is
       return ret;
     end shiftright;
 
-    procedure set_cc_comp ( a, b : in word; 
-                            cc : out cc_type;)
-    begin
-      if(a=b) then  
-        cc_v := '1';
-      else
-        cc_v := '0';
-      end if;
+
   begin
     if reset = '1' then
       read <= '0';
@@ -228,9 +247,9 @@ architecture algorithm of MIPS_Processor is
       pc := text_base_address; -- starting address to base address
       cc := (others => '0');
       regfile := (others => (others => '0'));
-      lo := (others => '0');
-      hi := (others => '0');
-      bus_out <= (others => '-');
+      lo := zero;
+      hi := zero;
+      bus_out <= dontcare;
       loop
         wait until clk = '1';
         exit when reset = '0';
@@ -278,8 +297,8 @@ architecture algorithm of MIPS_Processor is
             case rtype is                                                  
               when add => data := rs_int + rt_int;
               when subop => data := rs_int - rt_int;
-              when slt => 
-                if(rs_int < rt_int) then
+              when slt => set_cc_less(rs_reg, rt_reg, cc);
+                if(cc_v = '1') then
                     data := 1;
                 else
                     data := 0;
@@ -289,21 +308,15 @@ architecture algorithm of MIPS_Processor is
             set_cc_rd(data, cc, datareg);
             write_data(rd, regfile, datareg);
         end case;
-      when sw | beq => --uses rt_int
+      when sw | beq => -- needs rs and rt
         read_data(rs, regfile, rs_reg);
-        rs_int := to_integer(signed(rs_reg));
         read_data(rt, regfile, rt_reg);
-        rt_int := to_integer(signed(rt_reg));
         case opcode is
-          when sw =>  data := rs_int+to_integer(signed(imm));
-                      memory_write(data, rt_reg);
-          when beq => if(rs_int = rt_int) then
-                        cc_z := '1';
-                      else
-                        cc_z := '0';
-                      end if;
-                      if(cc_z = '1') then
-                        data := to_integer(signed(std_logic_vector'(imm & "00")));
+          when sw =>  datareg := addvectors(rs_reg,to_word_length(imm));
+                      memory_write(to_integer(datareg), rt_reg);
+          when beq => set_cc_equal(rs_reg, rt_reg, cc);
+                      if(cc_v = '1') then
+                        data := to_integer(shiftleft(imm,2));
                         pc := pc + data;
                       end if;
           when others => NULL;
@@ -315,10 +328,10 @@ architecture algorithm of MIPS_Processor is
           when lw =>  data := rs_int+to_integer(signed(imm));
                       memory_read(data, datareg);
                       write_data(rt, regfile, datareg);                  
-          when lui => datareg := (others =>'0');  
+          when lui => datareg := zero;  
                       datareg(word_length-1 downto word_length/2) := imm;
                       write_data(rt, regfile, datareg);
-          when ori => datareg := (others=> '0');
+          when ori => datareg := zero;
                       datareg(15 downto 0) := imm;
                       datareg := rs_reg or datareg;
                       write_data(rt,regfile,datareg);

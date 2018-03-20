@@ -237,7 +237,6 @@ architecture algorithm of MIPS_Processor is
       return ret;
     end shiftright;
 
-
   begin
     if reset = '1' then
       read <= '0';
@@ -319,7 +318,7 @@ architecture algorithm of MIPS_Processor is
                         data := to_integer(shiftleft(imm,2));
                         pc := pc + data;
                       end if;
-          when others => NULL;
+          when others => NULL;  
         end case;
       when others => -- uses only rs_int
         read_data(rs, regfile, rs_reg);

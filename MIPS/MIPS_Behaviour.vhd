@@ -20,7 +20,7 @@ architecture behaviour of MIPS_Processor is
       variable tmp : std_logic_vector(word_length*2-1 downto 0);
       variable data : integer; -- temp integer
       variable datareg : word; -- temp register
-      variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
+      variable cc : cc_type; -- clear condition code register;
         alias cc_n  : std_logic IS cc(2); -- negative
         alias cc_z  : std_logic IS cc(1); -- zero
         alias cc_v  : std_logic IS cc(0); -- overflow/compare
@@ -33,7 +33,7 @@ architecture behaviour of MIPS_Processor is
         alias rtype : op_code IS current_instr(5 downto 0);
       
       procedure set_cc_rd (data : in integer;
-                          cc : out std_logic_vector(2 downto 0);
+                          cc : out cc_type;
                           regval : out word) is
         constant low  : integer := -2**(word_length - 1);
         constant high : integer := 2**(word_length - 1) - 1;

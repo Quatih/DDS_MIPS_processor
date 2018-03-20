@@ -1,62 +1,3 @@
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
-entity MIPS_Processor IS
-  generic (word_length : integer);
-  port (bus_in : in std_logic_vector(word_length-1 downto 0);
-        bus_out : out std_logic_vector(word_length-1 downto 0);
-        memory_location : out std_logic_vector(word_length-1 downto 0);
-        clk : in std_ulogic;
-        write : out std_ulogic;
-        read : out std_ulogic;
-        ready : in std_ulogic;
-        reset : in std_ulogic
-        );
-end MIPS_Processor;
-
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
-package processor_types is
-  subtype word is std_logic_vector(31 downto 0);
-  subtype op_code is std_logic_vector (5 downto 0);
-  subtype reg_code is std_logic_vector (4 downto 0);
-  constant lw   : op_code := "100011";
-  constant sw   : op_code := "101011";
-  constant beq  : op_code := "000100";
-  constant add  : op_code := "100000";
-  constant addi : op_code := "001000";
-  constant mult : op_code := "011000";
-  constant ori  : op_code := "001101";
-  constant orop : op_code := "100101"; --orop = or operation
-  constant subop  : op_code := "100010"; -- sub operation
-  constant div  : op_code := "011010";
-  constant slt  : op_code := "101010";
-  constant mflo : op_code := "010010";
-  constant mfhi : op_code := "010000";
-  constant lui  : op_code := "001111";
-  constant nop  : op_code := "000000";
-  constant bgez : op_code := "000001";
-
-  -- source and dest codes
-  constant none : reg_code := "00000";
-  constant r1 : reg_code := "00001"; 
-  constant r2 : reg_code := "00010";
-  constant r3: reg_code := "00011";
-  constant r4 : reg_code := "00100";
-  constant r5 : reg_code := "00101";
-  constant r6 : reg_code := "00110";
-  constant r7 : reg_code := "00111";
-  constant r8 : reg_code := "01000";
-  constant r9 : reg_code := "01001";
-  constant r10 : reg_code := "01010";
-  constant r11 : reg_code := "01011";
-  constant r12 : reg_code := "01100";
-  constant r13 : reg_code := "01101";
-  constant r14 : reg_code := "01110";
-  constant r15 : reg_code := "01111";
-end processor_types;
-
 
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
@@ -79,7 +20,7 @@ architecture behaviour of MIPS_Processor is
       variable tmp : std_logic_vector(word_length*2-1 downto 0);
       variable data : integer; -- temp integer
       variable datareg : word; -- temp register
-      variable cc : std_logic_vector (2 downto 0); -- clear condition code register;
+      variable cc : cc_type; -- clear condition code register;
         alias cc_n  : std_logic IS cc(2); -- negative
         alias cc_z  : std_logic IS cc(1); -- zero
         alias cc_v  : std_logic IS cc(0); -- overflow/compare
@@ -92,7 +33,7 @@ architecture behaviour of MIPS_Processor is
         alias rtype : op_code IS current_instr(5 downto 0);
       
       procedure set_cc_rd (data : in integer;
-                          cc : out std_logic_vector(2 downto 0);
+                          cc : out cc_type;
                           regval : out word) is
         constant low  : integer := -2**(word_length - 1);
         constant high : integer := 2**(word_length - 1) - 1;
@@ -216,7 +157,7 @@ architecture behaviour of MIPS_Processor is
                         regfile         : in register_file;
                         ret             : out word ) is
     begin
-      if(to_integer(unsigned(source)) > 15) then
+      if((unsigned(source)) > regfile'high) then
         assert false report "Wrong access to register" severity failure;
       else
         ret := regfile(to_integer(unsigned(source)));
@@ -227,7 +168,7 @@ architecture behaviour of MIPS_Processor is
                           regfile         : out register_file;
                           data            : in word)is
     begin
-      if(to_integer(unsigned(destination)) > 15) then
+      if((unsigned(destination)) > regfile'high) then
         assert false report "Wrong access to register" severity failure;
       else
         regfile(to_integer(unsigned(destination))) := data;
@@ -313,11 +254,11 @@ architecture behaviour of MIPS_Processor is
           when sw =>  data := rs_int+to_integer(signed(imm));
                       memory_write(data, rt_reg);
           when beq => if(rs_int = rt_int) then
-                        cc_z := '1';
+                        cc_v := '1';
                       else
-                        cc_z := '0';
+                        cc_v := '0';
                       end if;
-                      if(cc_z = '1') then
+                      if(cc_v = '1') then
                         data := to_integer(signed(std_logic_vector'(imm & "00")));
                         pc := pc + data;
                       end if;

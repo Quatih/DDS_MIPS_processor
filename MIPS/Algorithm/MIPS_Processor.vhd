@@ -63,7 +63,7 @@ USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 USE work.processor_types.ALL;
 USE work.memory_config.ALL;
-architecture behaviour of MIPS_Processor is
+architecture algorithm of MIPS_Processor is
   begin
     process
       type register_file is array (0 to 31) 

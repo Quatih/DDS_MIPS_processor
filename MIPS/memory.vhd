@@ -9,7 +9,7 @@
 --  
 -- read from memory
 --
---         data read from memory valid ----
+--         data read from memory valid
 --              <--------> 
 --
 --       +---------------+
@@ -106,9 +106,9 @@ BEGIN
 "018e6020", --  add $12,$12,$14       70   	add $12, $12, $14 # sn=s(n-1)+term
 "216b0001", --  addi $11,$11,1        71   	add $11, $11, 1   # i++
 "0401fff1", --  bgez $0,-15           72   	b ntrm  # branch always to ntrm
+"00000000", --  nop                   73   rdy:	nop
 "3c011001", --  lui $1,4097           74     sw $12,EX # e^x in EX
-"ac2c0008", --  sw $12,8($1)
-"00000000", --  nop                   73   rdy:	nop               
+"ac2c0008", --  sw $12,8($1)               
 OTHERS => "00000000" 
             );
   

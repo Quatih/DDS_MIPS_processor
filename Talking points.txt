@@ -4,6 +4,11 @@ Design decisions we need to make about the implementation
 
   testbench
 
+
+  need to work on data path and control bpath
+  finalize report procedure
+  
+
 Division of work
 
 more fun stuff!

@@ -28,6 +28,7 @@ begin
             --read instruction from memory, inc pc
             --decode instruction
             --execute
+                -- send control and values to alu
             --store results
             
         end if;

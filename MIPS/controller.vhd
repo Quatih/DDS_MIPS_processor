@@ -49,12 +49,22 @@ begin
             end loop;
         elsif(rising_edge(clk)) then
             control <= (read_mem | others => '0'); 
-                --read instruction
-                
             loop 
                 wait until rising_edge(clk);
                 exit when ready = '1';
             end loop;
+
+            case opcode is
+                when nop =>
+                case rtype is 
+                    when nop => assert false report "finished calculation" severity failure;
+                    when others => assert false report "illegal r-type instruction" severity warning;
+                end case;
+                when others => assert false report "illegal instruction" severity warning;
+            end case;
+            --instruction ready;
+
+
             --read instruction from  memory, inc pc
             --decode instruction
             --execute

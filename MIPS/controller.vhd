@@ -48,28 +48,40 @@ begin
               exit when reset = '0';
             end loop;
         elsif(rising_edge(clk)) then
-            control <= (read_mem | others => '0'); 
+            control <= (read_mem => '1', others => '0'); 
             loop 
                 wait until rising_edge(clk);
                 exit when ready = '1';
             end loop;
 
-            case opcode is
+            case opcode is --decode instruction
                 when nop =>
                 case rtype is 
                     when nop => assert false report "finished calculation" severity failure;
-                    when others => assert false report "illegal r-type instruction" severity warning;
+                    when mfhi =>
+                    when mflo =>
+                    when mult =>
+                    when div =>
+                    when orop =>
+                    when add =>
+                    when subop =>
+                    when slt =>
+                    when others =>
+                        control <= (others => '0');
+                        assert false report "illegal r-type instruction" severity warning;
                 end case;
-                when others => assert false report "illegal instruction" severity warning;
+                when lw =>
+                when sw =>
+                when beq =>
+                when bgez =>
+                when ori =>
+                when addi =>
+                when lui =>
+                
+                when others =>
+                    control <= (others => '0'); 
+                    assert false report "illegal instruction" severity warning;
             end case;
-            --instruction ready;
-
-
-            --read instruction from  memory, inc pc
-            --decode instruction
-            --execute
-                -- send control and values to alu
-            --store results
             
         end if;
     end process;

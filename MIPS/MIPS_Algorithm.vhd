@@ -29,7 +29,7 @@ architecture algorithm of MIPS_Processor is
         alias rs : reg_code IS current_instr(25 downto 21);
         alias rt : reg_code IS current_instr(20 downto 16);
         alias rd : reg_code Is current_instr(15 downto 11);
-        alias imm : std_logic_vector(15 downto 0) IS current_instr(15 downto 0);
+        alias imm : hword IS current_instr(15 downto 0);
         alias rtype : op_code IS current_instr(5 downto 0);
       constant one : word := (0 => '1', others =>'0');
       constant zero : word := (others => '0');

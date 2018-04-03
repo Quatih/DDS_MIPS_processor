@@ -59,7 +59,9 @@ begin
                 case rtype is 
                     when nop    => assert false report "finished calculation" severity failure;
                     when mfhi   => control <= (rwrite => '1', rdest => '1', spreg => '1', lohisel =>'1', others => '0');
+                                   wait until rising_edge(clk);
                     when mflo   => control <= (rwrite => '1', rdest => '1', spreg => '1', others => '0');
+                                   wait until rising_edge(clk);
                     when mult   => 
                     when div    => 
                     when orop   => 

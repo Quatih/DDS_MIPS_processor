@@ -35,9 +35,6 @@ package control_names is
       lohisel,--lo(0), hi(1) to rsource
       pcimm   --add to pc from imm(1)
       );  
-  type alu_signals is
-    (alu_and, alu_or, alu_add, alu_sub, alu_div, alu_mult);
-  type alu_bus is array (alu_signals) of std_logic;
   -- do not change the following type declaration
   type control_bus is array (control_signals) of std_logic;  
   

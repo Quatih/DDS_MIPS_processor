@@ -7,6 +7,7 @@ package processor_types is
   subtype op_code is std_logic_vector (5 downto 0);
   subtype reg_code is std_logic_vector (4 downto 0);
   subtype cc_type is std_logic_vector (2 downto 0);
+  subtype alu_code is std_logic_vector (2 downto 0);
   subtype hword is std_logic_vector (15 downto 0);
   constant lw   : op_code := "100011";
   constant sw   : op_code := "101011";
@@ -42,4 +43,13 @@ package processor_types is
   constant r13 : reg_code := "01101";
   constant r14 : reg_code := "01110";
   constant r15 : reg_code := "01111";
+
+  constant alu_add : alu_code := "000";
+  constant alu_mult : alu_code := "001";
+  constant alu_sub : alu_code := "010";
+  constant alu_div : alu_code := "011";
+  constant alu_or : alu_code := "100";
+  constant alu_and : alu_code := "101";
+  --constant alu_and : alu_code := "110";
+  --constant alu_and : alu_code := "111";
 end processor_types;

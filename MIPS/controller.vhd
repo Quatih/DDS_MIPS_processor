@@ -119,10 +119,25 @@ begin
 							control <= (rread => '1', others => '0'); --calc addr
 							alu_out <= alu_gz;
 							wait until alu_ready = '1';
-							if(cc_z) 
+							if(cc_v = '1') then
+								control <= (pcimm => '1', others => '0');
+							end if; 
 						when ori	=>
+							control <= (rread => '1', alusrc => '1', others => '0');
+							alu_out <= alu_or;
+							wait until alu_ready = '1';
+							control <= (rwrite => '1', others => '0');
 						when addi =>
+							control <= (rread => '1', alusrc => '1', others => '0');
+							alu_out <= alu_add;
+							wait until alu_ready = '1';
+							control <= (rwrite => '1', others => '0');
+							
 						when lui  =>
+							control <= (rread => '1', alusrc => '1', immse => '1', others => '0');
+							alu_out <= alu_add; -- works because in lui, rs is 0;
+							wait until alu_ready = '1';
+							control <= (rwrite => '1', others => '0');
 						when others =>
 							control <= (others => '0'); 
 							assert false report "illegal instruction" severity warning;

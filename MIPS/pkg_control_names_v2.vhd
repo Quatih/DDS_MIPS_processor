@@ -23,8 +23,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 package control_names is
   type control_signals is
-     (enable_r1,enable_r2,enable_r3,init,shift_add,addition);
-
+     (read_rt, read_rs, write_rd, write_mem,
+      read_mem, mem_rd, ALU_src, pc_adj);
+  type alu_signals is
+    (alu_and, alu_or, alu_add, alu_sub, alu_div, alu_mult);
+  type alu_bus is array (alu_signals) of std_logic;
   -- do not change the following type declaration
   type control_bus is array (control_signals) of std_logic;  
   

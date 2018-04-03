@@ -29,7 +29,7 @@ architecture behaviour of MIPS_Processor is
         alias rs : reg_code IS current_instr(25 downto 21);
         alias rt : reg_code IS current_instr(20 downto 16);
         alias rd : reg_code Is current_instr(15 downto 11);
-        alias imm : std_logic_vector(15 downto 0) IS current_instr(15 downto 0);
+        alias imm : hword IS current_instr(15 downto 0);
         alias rtype : op_code IS current_instr(5 downto 0);
       
       procedure set_cc_rd (data : in integer;
@@ -56,7 +56,7 @@ architecture behaviour of MIPS_Processor is
           else
               cc_z := '0';       
           end if;
-          regval := std_logic_vector(to_unsigned(data, word_length));
+          regval := std_logic_vector(to_signed(data, word_length));
         end if;
     end set_cc_rd;
 
@@ -282,7 +282,12 @@ architecture behaviour of MIPS_Processor is
                         set_cc_rd(data, cc, datareg);
                         write_data(rt,regfile,datareg);
           when bgez =>  set_cc_rd(rs_int, cc, datareg);
-                        if(cc_z = '1') then
+                        if(rs_int > 0) then
+                          cc_v := '1';
+                        else 
+                          cc_v := '0';
+                        end if;
+                        if(cc_z = '1' or cc_v = '1') then
                           data := to_integer(signed(std_logic_vector'(imm & "00")));
                           pc := pc + data;
                         end if;

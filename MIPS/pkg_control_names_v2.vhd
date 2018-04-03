@@ -13,10 +13,10 @@
 -- Contents         : control signals used in datapath and controller
 --
 -- Change Log 
---   Author         : 
---   Email          : 
---   Date           :  
---   Changes        :
+--   Author         : Sighvatur I. Gislason
+--   Email          : hvatig@gmail.com
+--   Date           : 3.4.2018  
+--   Changes        : adjust control signals and added alu signals
 --
 
 library ieee;
@@ -30,6 +30,7 @@ package control_names is
       mread,  --read from memory (1)
       wregsrc,--source of register write, alu(0) or mem(1)
       alusrc, --source of op2 of alu, reg(0) or seimm(1)
+      aludst, --destination of alu, data(0) or lohi (1)
       pcimm   --add to pc from imm(1)
       );  
   type alu_signals is

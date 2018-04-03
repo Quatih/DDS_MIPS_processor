@@ -23,8 +23,15 @@ library ieee;
 use ieee.std_logic_1164.all;
 package control_names is
   type control_signals is
-     (read_rt, read_rs, write_rd, write_mem,
-      read_mem, mem_rd, ALU_src, pc_adj);
+     (rdest,  --read from rt (0) or rd (1) 
+      msrc,   --addr input to mem, pc(0) or alu(1) 
+      rwrite, --write to a register (1)
+      mwrite, --write to memory (1)
+      mread,  --read from memory (1)
+      wregsrc,--source of register write, alu(0) or mem(1)
+      alusrc, --source of op2 of alu, reg(0) or seimm(1)
+      pcimm   --add to pc from imm(1)
+      );  
   type alu_signals is
     (alu_and, alu_or, alu_add, alu_sub, alu_div, alu_mult);
   type alu_bus is array (alu_signals) of std_logic;

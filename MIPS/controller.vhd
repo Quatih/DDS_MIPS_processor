@@ -55,28 +55,28 @@ begin
             end loop;
 
             case opcode is --decode instruction
-                when nop =>
+                when "00000"=>
                 case rtype is 
-                    when nop => assert false report "finished calculation" severity failure;
-                    when mfhi =>
-                    when mflo =>
-                    when mult =>
-                    when div =>
-                    when orop =>
-                    when add =>
-                    when subop =>
-                    when slt =>
+                    when nop    => assert false report "finished calculation" severity failure;
+                    when mfhi   => 
+                    when mflo   => 
+                    when mult   => 
+                    when div    => 
+                    when orop   => 
+                    when add    => 
+                    when subop  => 
+                    when slt    => 
                     when others =>
                         control <= (others => '0');
                         assert false report "illegal r-type instruction" severity warning;
                 end case;
-                when lw =>
-                when sw =>
-                when beq =>
-                when bgez =>
-                when ori =>
-                when addi =>
-                when lui =>
+                when lw     =>
+                when sw     =>
+                when beq    =>
+                when bgez   =>
+                when ori    =>
+                when addi   =>
+                when lui    =>
                 
                 when others =>
                     control <= (others => '0'); 

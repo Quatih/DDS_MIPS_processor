@@ -1,10 +1,10 @@
 
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
-USE ieee.numeric_std.ALL;
-USE work.processor_types.ALL;
-USE work.memory_config.ALL;
-architecture behaviour of MIPS_Processor is
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+use work.processor_types.all;
+use work.memory_config.all;
+architecture behaviour of mips_processor is
   begin
     process
       type register_file is array (0 to 31) 
@@ -21,16 +21,16 @@ architecture behaviour of MIPS_Processor is
       variable data : integer; -- temp integer
       variable datareg : word; -- temp register
       variable cc : cc_type; -- clear condition code register;
-        alias cc_n  : std_logic IS cc(2); -- negative
-        alias cc_z  : std_logic IS cc(1); -- zero
-        alias cc_v  : std_logic IS cc(0); -- overflow/compare
+        alias cc_n  : std_logic is cc(2); -- negative
+        alias cc_z  : std_logic is cc(1); -- zero
+        alias cc_v  : std_logic is cc(0); -- overflow/compare
       variable current_instr: word;
-        alias opcode : op_code IS current_instr(31 downto 26);
-        alias rs : reg_code IS current_instr(25 downto 21);
-        alias rt : reg_code IS current_instr(20 downto 16);
-        alias rd : reg_code Is current_instr(15 downto 11);
-        alias imm : hword IS current_instr(15 downto 0);
-        alias rtype : op_code IS current_instr(5 downto 0);
+        alias opcode : op_code is current_instr(31 downto 26);
+        alias rs : reg_code is current_instr(25 downto 21);
+        alias rt : reg_code is current_instr(20 downto 16);
+        alias rd : reg_code is current_instr(15 downto 11);
+        alias imm : hword is current_instr(15 downto 0);
+        alias rtype : op_code is current_instr(5 downto 0);
       
       procedure set_cc_rd (data : in integer;
                           cc : out cc_type;
@@ -40,8 +40,8 @@ architecture behaviour of MIPS_Processor is
       begin
         if (data<low) or (data>high)
         then -- overflow
-          ASSERT false REPORT "overflow situation in arithmetic operation" SEVERITY 
-          note;
+          assert false report "overflow situation in arithmetic operation" severity 
+          warning;
           cc_v:='1'; cc_n:='-'; cc_z:='-'; -- correct?
           regval := (others => '-');
         else
@@ -61,8 +61,8 @@ architecture behaviour of MIPS_Processor is
     end set_cc_rd;
 
     procedure memory_read (addr   : in natural;
-                            result : out word) IS
-    -- Used 'global' signals are:
+                            result : out word) is
+    -- used 'global' signals are:
     --   clk, reset, ready, read, a_bus, d_busin
     -- read data from addr in memory
     begin
@@ -96,7 +96,7 @@ architecture behaviour of MIPS_Processor is
 
         if ready='1' then
           result := bus_in;
-          EXIT;
+          exit;
         end if;    
       end loop;
       wait until clk='1';
@@ -109,8 +109,8 @@ architecture behaviour of MIPS_Processor is
     end memory_read;                         
 
     procedure memory_write(addr : in natural;
-                            data : in word) IS
-    -- Used 'global' signals are:
+                            data : in word) is
+    -- used 'global' signals are:
     --   clk, reset, ready, write, a_bus, d_busout
     -- write data to addr in memory
     begin
@@ -158,7 +158,7 @@ architecture behaviour of MIPS_Processor is
                         ret             : out word ) is
     begin
       if((unsigned(source)) > regfile'high) then
-        assert false report "Wrong access to register" severity failure;
+        assert false report "wrong access to register" severity failure;
       else
         ret := regfile(to_integer(unsigned(source)));
       end if;
@@ -169,7 +169,7 @@ architecture behaviour of MIPS_Processor is
                           data            : in word)is
     begin
       if((unsigned(destination)) > regfile'high) then
-        assert false report "Wrong access to register" severity failure;
+        assert false report "wrong access to register" severity failure;
       else
         regfile(to_integer(unsigned(destination))) := data;
       end if;
@@ -196,14 +196,14 @@ architecture behaviour of MIPS_Processor is
     memory_read(pc, current_instr); -- read instruction
     pc := pc + 4;
     case opcode is
-      when "000000" => -- R-type
+      when "000000" => -- r-type
         case rtype is 
           when nop => assert false report "finished calculation" severity failure; 
           when mfhi | mflo => -- access lo, hi
             case rtype is 
               when mflo => datareg := lo;
               when mfhi => datareg := hi;
-              when others => NULL;
+              when others => null;
             end case;
             write_data(rd, regfile, datareg);
           when mult | div => --store in lo, hi
@@ -219,7 +219,7 @@ architecture behaviour of MIPS_Processor is
               when div => 
                 lo := std_logic_vector(to_signed(rs_int/rt_int, word_length));
                 hi := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
-              when others => NULL;
+              when others => null;
             end case;
           when orop =>
             read_data(rs, regfile, rs_reg);
@@ -259,7 +259,7 @@ architecture behaviour of MIPS_Processor is
                         data := to_integer(signed(std_logic_vector'(imm & "00")));
                         pc := pc + data;
                       end if;
-          when others => NULL;
+          when others => null;
         end case;
       when others => -- uses only rs_int
         read_data(rs, regfile, rs_reg);

@@ -48,7 +48,7 @@ begin
               exit when reset = '0';
             end loop;
         elsif(rising_edge(clk)) then
-					control <= (read_mem => '1', others => '0'); 
+					control <= (mread => '1', others => '0'); 
 					loop 
 						wait until rising_edge(clk);
 						exit when ready = '1';
@@ -56,9 +56,9 @@ begin
 					case opcode is --decode instruction
 						when "00000"=>
 						case rtype is 
-							when nop  =>  assert false report "finished calculation" severity failure;
-							when mfhi =>  control <= (rwrite => '1', spreg => '1', lohisel =>'1', others => '0');
-							when mflo =>  control <= (rwrite => '1', spreg => '1', others => '0');
+							when nop  => assert false report "finished calculation" severity failure;
+							when mfhi => control <= (rwrite => '1', spreg => '1', lohisel =>'1', others => '0');
+							when mflo => control <= (rwrite => '1', spreg => '1', others => '0');
 							when mult =>  
 								control <= (alusrc => '1', rread => '1', others => '0');
 								alu_out <= alu_mult;
@@ -76,14 +76,22 @@ begin
 								control <= (rread => '1', others => '0') -- move to alu inputs, 
 								alu_out <= alu_add;
 								wait until alu_ready = '1';
-								control <= (rdest => '1', rwrite => '1', others => '0'); --move from alu to rdst
-
+								if(cc_v = '1') then
+									assert false report "overflow situation in arithmetic operation" severity 
+									note;
+								else
+									control <= (rdest => '1', rwrite => '1', others => '0'); --move from alu to rdst
+								end if;
 							when subop=>  
 								control <= (rread => '1', others => '0') -- move to alu inputs, 
 								alu_out <= alu_sub;
 								wait until alu_ready = '1';
-								control <= (rdest => '1', rwrite => '1', others => '0'); --move from alu to rdst
-
+								if(cc_v = '1') then
+									assert false report "overflow situation in arithmetic operation" severity 
+									note;
+								else
+									control <= (rdest => '1', rwrite => '1', others => '0'); --move from alu to rdst
+								end if;
 							when slt  =>  
 								control <= (rread => '1', others => '0') -- move to alu inputs, 
 								alu_out <= alu_lt;
@@ -142,7 +150,6 @@ begin
 							control <= (others => '0'); 
 							assert false report "illegal instruction" severity warning;
 					end case;
-					
         end if;
     end process;
 end behaviour;

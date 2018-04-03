@@ -58,8 +58,8 @@ begin
                 when "00000"=>
                 case rtype is 
                     when nop    => assert false report "finished calculation" severity failure;
-                    when mfhi   => 
-                    when mflo   => 
+                    when mfhi   => control <= (rwrite => '1', rdest => '1', spreg => '1', lohisel =>'1', others => '0');
+                    when mflo   => control <= (rwrite => '1', rdest => '1', spreg => '1', others => '0');
                     when mult   => 
                     when div    => 
                     when orop   => 

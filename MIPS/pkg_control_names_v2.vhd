@@ -31,6 +31,8 @@ package control_names is
       wregsrc,--source of register write, alu(0) or mem(1)
       alusrc, --source of op2 of alu, reg(0) or seimm(1)
       aludst, --destination of alu, data(0) or lohi (1)
+      spreg,  --read from special registers to rsource
+      lohisel,--lo(0), hi(1) to rsource
       pcimm   --add to pc from imm(1)
       );  
   type alu_signals is

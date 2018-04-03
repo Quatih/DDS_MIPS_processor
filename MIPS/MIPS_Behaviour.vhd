@@ -41,7 +41,7 @@ architecture behaviour of mips_processor is
         if (data<low) or (data>high)
         then -- overflow
           assert false report "overflow situation in arithmetic operation" severity 
-          warning;
+          note;
           cc_v:='1'; cc_n:='-'; cc_z:='-'; -- correct?
           regval := (others => '-');
         else
@@ -254,7 +254,7 @@ architecture behaviour of mips_processor is
           when sw =>  data := rs_int+to_integer(signed(imm));
                       memory_write(data, rt_reg);
           when beq => data := rs_int - rt_int;
-                      set_cc_rd(data, cc, datareg)
+                      set_cc_rd(data, cc, datareg);
                       if(cc_z = '1') then
                         data := to_integer(signed(std_logic_vector'(imm & "00")));
                         pc := pc + data;

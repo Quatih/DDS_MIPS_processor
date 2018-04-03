@@ -1,52 +1,56 @@
-
-
-
 library ieee;
+use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-architecture rtl of datapath is
-  constant zerobw_1      : std_logic_vector(bw-2 downto 0) := (others=>'0');
-  constant zerobw        : std_logic_vector(bw-1 downto 0) := (others=>'0');
-  constant dontcare      : std_logic_vector(bw-1 downto 0) := (others=>'-'); 
-  signal s               : std_logic_vector(bw downto 0);
-  signal a,b,ir1,ir2,ir3 : std_logic_vector(bw-1 downto 0);
-  signal r1,r2,r3        : std_logic_vector(bw-1 downto 0);
+use work.processor_types.all;
+use work.memory_config.all;
+use work.control_names.all;
 
+entity datapath is
+  generic (word_length : natural);
+  port (
+    clk       : in std_ulogic;
+    ready     : out std_ulogic;
+    reset     : in std_ulogic;
+    ctrl_std  : in std_logic_vector(0 to control_bus'length-1);
+    opc       : out op_code;
+    rtopc     : out op_code;
+    ready_out : out std_ulogic
+    alu_op1   : out word;
+    alu_op2   : out word;
+    alu_result: in std_logic_vector(word_length*2 downto 0)
+    );
+end datapath;
+
+architecture rtl of datapath is
+  constant zero       : word := (others=>'0');
+  constant dontcare   : word := (others=>'-'); 
+  
+  type register_file is array (0 to 31) 
+    of std_logic_vector(word_length-1 downto 0);
+  signal regfile  : register_file;
+  signal lo, hi   : word; --special register
+  signal pc       : unsigned(word_length*2 downto 0);
+  signal reg1, reg2, regw : word;
+  signal instruction : word;
+    alias opcode : op_code is current_instr(31 downto 26);
+    alias rs : reg_code is current_instr(25 downto 21);
+    alias rt : reg_code is current_instr(20 downto 16);
+    alias rd : reg_code is current_instr(15 downto 11);
+    alias imm : hword is current_instr(15 downto 0);
+    alias rtype : op_code is current_instr(5 downto 0);
   signal control : control_bus;
 begin
- 
+
+
   control <= std2ctlr(ctrl_std);
 
-  ir1 <= s(0) & r1(bw-1 downto 1) when control(shift_add)='1' else
-         s(bw-1 downto 0)         when control(addition)='1'  else
-         op1                      when control(init)='1'      else
-         dontcare;
 
-  ir2 <= op2;
 
-  ir3 <= s(bw downto 1)   when control(shift_add)='1' else
-         zerobw_1 & s(bw) when control(addition)='1'  else
-         zerobw           when control(init)='1'      else
-         dontcare;
+  lo <= alu_result(word_length-1 downto 0) when control(spreg) = '1' and control(lohisel) = '0' else
+        lo;
 
-  a   <= r3        when control(shift_add)='1' else
-         r1        when control(addition)='1'  else
-         dontcare;
-
-  b   <= r2        when control(addition)='1'                else
-         r2        when control(shift_add)='1' and r1(0)='1' else
-         zerobw    when control(shift_add)='1' and r1(0)='0' else
-         dontcare;
-
-  s   <= std_logic_vector( ('0'&unsigned(a)) + unsigned(b));
-
-  res <= r3 & r1;
+  hi <= alu_result(word_length-1 downto 0) when control(spreg) = '1' and control(lohisel) = '1' else
+        hi;
   
-  registers:process
-  begin
-    wait until rising_edge(clk);
-    if control(enable_r1)='1' then r1<=ir1; end if;
-    if control(enable_r2)='1' then r2<=ir2; end if;
-    if control(enable_r3)='1' then r3<=ir3; end if;
-  end process;
 end rtl;
 

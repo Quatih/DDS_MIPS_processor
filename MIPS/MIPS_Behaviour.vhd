@@ -253,12 +253,9 @@ architecture behaviour of MIPS_Processor is
         case opcode is
           when sw =>  data := rs_int+to_integer(signed(imm));
                       memory_write(data, rt_reg);
-          when beq => if(rs_int = rt_int) then
-                        cc_v := '1';
-                      else
-                        cc_v := '0';
-                      end if;
-                      if(cc_v = '1') then
+          when beq => data := rs_int - rt_int;
+                      set_cc_rd(data, cc, datareg)
+                      if(cc_z = '1') then
                         data := to_integer(signed(std_logic_vector'(imm & "00")));
                         pc := pc + data;
                       end if;

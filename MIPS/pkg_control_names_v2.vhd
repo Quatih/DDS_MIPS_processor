@@ -23,18 +23,20 @@ library ieee;
 use ieee.std_logic_1164.all;
 package control_names is
   type control_signals is
-     (rdest,  --read from rt (0) or rd (1) 
-      msrc,   --addr input to mem, pc(0) or alu(1) 
-      rwrite, --write to a register (1)
-      mwrite, --write to memory (1)
-      mread,  --read from memory (1)
-      wregsrc,--source of register write, alu(0) or mem(1)
-      alusrc, --source of op2 of alu, reg(0) or seimm(1)
-      aludst, --destination of alu, data(0) or lohi (1)
-      spreg,  --read from special registers to rsource
-      lohisel,--lo(0), hi(1) to rsource
-      pcimm   --add to pc from imm(1)
-      );  
+   (rdest,  --read from rt (0) or rd (1) 
+    msrc,   --addr input to mem, pc(0) or alu(1) 
+    rwrite, --write to a register (1)
+    rread,  --read from register(1)
+    mwrite, --write to memory (1)
+    mread,  --read from memory (1)
+    wregsrc,--source of register write, alu(0) or mem(1)
+    alusrc, --source of op2 of alu, rsource(0) or seimm(1)
+    aludst, --destination of alu, rsource(0) or lohi (1)
+    alusrczero, --source of op2 is zero;
+    spreg,  --read from special registers to rsource
+    lohisel,--lo(0), hi(1) to rsource
+    pcimm   --add to pc from imm(1)
+    );  
   -- do not change the following type declaration
   type control_bus is array (control_signals) of std_logic;  
   

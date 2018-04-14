@@ -256,7 +256,7 @@ architecture behaviour of mips_processor is
           when beq => data := rs_int - rt_int;
                       set_cc_rd(data, cc, datareg);
                       if(cc_z = '1') then
-                        data := to_integer(signed(std_logic_vector'(imm & "00")));
+                        data := to_integer(signed(std_logic_vector'(imm & "00"))); -- se and shift
                         pc := pc + data;
                       end if;
           when others => null;

@@ -15,11 +15,6 @@ package memory_access is
     begin
       -- put address on output
 
-      memory_location <= std_logic_vector(addr);
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;
 
       loop -- ready must be low (handshake)
         if reset='1' then

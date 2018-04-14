@@ -33,8 +33,10 @@ package control_names is
     alusrc, --source of op2 of alu, rsource(0) or seimm(1)
     aludst, --destination of alu, rsource(0) or lohi (1)
     immse,  --sign extend to wl(0) or sl to wl(1)
-    spreg,  --read from special registers to rsource
+    wspreg, --write to special register
+    rspreg,  --read from special registers to rsource
     lohisel,--lo(0), hi(1) to rsource
+    pcincr,
     pcimm   --add to pc from imm(1)
     );  
   -- do not change the following type declaration

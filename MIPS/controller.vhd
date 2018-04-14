@@ -8,7 +8,6 @@ entity controller is
 	generic (word_length : natural);
 	port (
 		clk 			: in std_ulogic;
-		ready 		: in std_ulogic;
 		reset 		: in std_ulogic;
 		ctrl_std : out std_logic_vector(0 to control_bus'length-1);
 
@@ -32,15 +31,15 @@ begin
     seq: process 
     begin
         if reset = '1' then
-            control <= (others => '0');
-            read <= '0';
-            write <= '0';
-            memory_location <= (others => '-');
-            bus_out <= (others => '-');
-            loop
-              wait until clk = '1';
-              exit when reset = '0';
-            end loop;
+					control <= (others => '0');
+					read <= '0';
+					write <= '0';
+					memory_location <= (others => '-');
+					bus_out <= (others => '-');
+					loop
+						wait until clk = '1';
+						exit when reset = '0';
+					end loop;
         elsif(rising_edge(clk)) then
 					control <= (mread => '1', others => '0'); 
 					loop 
@@ -51,16 +50,26 @@ begin
 						when "00000"=>
 						case rtopc is 
 							when nop  => assert false report "finished calculation" severity failure;
-							when mfhi => control <= (rwrite => '1', spreg => '1', lohisel =>'1', others => '0');
-							when mflo => control <= (rwrite => '1', spreg => '1', others => '0');
+							when mfhi => control <= (rwrite => '1', rspreg => '1', lohisel =>'1', others => '0');
+							when mflo => control <= (rwrite => '1', rspreg => '1', lohisel =>'0', others => '0');
 							when mult =>  
 								control <= (alusrc => '1', rread => '1', others => '0');
+								wait until rising_edge(clk);
 								alu_ctrl <= alu_mult;
-								wait until alu_ready = '1';
+								wait until alu_ready = '1'; -- when alu has finished mult, result is stored in special registers
+								control <= control <= (wspreg => '1', lohisel =>'1', others => '0');
+								wait until rising_edge(clk);
+								control <= control <= (wspreg => '1', lohisel =>'0', others => '0');
+								
 							when div  =>  
 								control <= (alusrc => '1', rread => '1', others => '0');
-								alu_ctrl <= alu_div;
-								wait until alu_ready = '1'; 
+								wait until rising_edge(clk);
+								alu_ctrl <= alu_mult;
+								wait until alu_ready = '1'; -- when alu has finished mult, result is stored in special registers
+								control <= control <= (wspreg => '1', lohisel =>'1', others => '0');
+								wait until rising_edge(clk);
+								control <= control <= (wspreg => '1', lohisel =>'0', others => '0');
+								
 							when orop =>  
 								control <= (rread => '1', others => '0') -- move to alu inputs, 
 								alu_ctrl <= alu_or;

@@ -54,7 +54,7 @@ architecture rtl of datapath is
 
   procedure read_reg(source          : in reg_code;
                      signal regfile  : in register_file;
-                      ret             : out word ) is
+                     ret             : out word ) is
   begin
     if((unsigned(source)) > regfile'high) then
       assert false report "wrong access to register" severity failure;
@@ -65,7 +65,7 @@ architecture rtl of datapath is
 
   procedure write_reg(destination     : in reg_code;
                       signal regfile  : out register_file;
-                        data            : in word)is
+                      data            : in word)is
   begin
     if((unsigned(destination)) > regfile'high) then
       assert false report "wrong access to register" severity failure;
@@ -83,20 +83,20 @@ begin
     -- Proxy mem_read, calls mem_read in pkg_memory_access
     procedure memory_read(
       addr : in word; --std_logic_vector(word_length*2-1 downto 0);
-      data : inout word
+      data : out word
     ) is
     begin
       memory_read(addr, mem_addr, reset, mem_ready, mem_read, mem_bus_in, clk, data);
-    end procedure;
+    end memory_read;
 
     -- Proxy mem_write, calls mem_write in pkg_memory_access
     procedure memory_write(
       addr    : in word; --std_logic_vector(word_length*2-1 downto 0);
-      result  : inout word
+      result  : in word
     ) is
     begin
       memory_write(addr, mem_addr, reset, mem_ready, mem_write, mem_bus_out, clk, result);
-    end procedure;
+    end memory_write;
 
   begin
     if(reset = '1') then
@@ -115,7 +115,10 @@ begin
     if(control(pcincr) = '1') then
       pc <= pc + 4;
     elsif(control(pcimm) = '1') then
-      pc <= pc + signed(imm & "00");
+      regresult(31 downto 18) := (others => '0');
+      regresult(17 downto 2) := imm;
+      regresult(1 downto 0) := (others => '0');
+      pc <= unsigned(regresult);
     end if;
   
     --regstuff
@@ -146,22 +149,24 @@ begin
         write_reg(rd, regfile, aluword);
       else
         write_reg(rt, regfile, aluword);
-    end if;
+      end if;
     elsif control(wspreg) = '1' then
       spec_reg <= alu_result;
-
     elsif control(mread) = '1' then --read mem
       if control(msrc) = '1' then --addr from alu
-        memory_read(unsigned(aluword),regresult);
+        memory_read(std_logic_vector(unsigned(aluword)),regresult);
         write_reg(rt, regfile, regresult);
       else -- addr from pc
-        memory_read(pc, regresult);-- not sure if correct pc is loaded, because signal
+        memory_read(std_logic_vector(pc), regresult);-- not sure if correct pc is loaded, because signal
         instruction <= regresult;
         opc <= opcode; -- not sure if works because of signals, needs testing
         rtopc <= rtype; -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
         ready <= '1';
       end if;
-    else
+    elsif control(mwrite) = '1' then -- write memory
+      read_reg(rt, regfile, regresult);
+      -- unsigned conversion because the output of the alu is signed, and memory addresses are unsigned
+      memory_write(std_logic_vector(unsigned(aluword)),regresult); 
     end if;
   end process;
 

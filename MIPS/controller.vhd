@@ -105,7 +105,7 @@ begin
 					control <= (rread => '1', alusrc => '1', others => '0'); --calc addr
 					alu_ctrl <= alu_add;
 					wait until alu_ready = '1';
-					control <= (mwrite => '1', msrc => '1', others => '0'); --load word
+					control <= (mwrite => '1', msrc => '1', others => '0'); --save word
 					wait until ready = '1';
 
 				when beq  =>

@@ -8,22 +8,22 @@ use work.control_names.all;
 package memory_access is
   procedure memory_read (
     addr                : in word;
-    signal mem_addr     : inout word;
+    signal mem_addr     : out word;
     reset               : in std_ulogic;
     mem_ready           : in std_ulogic;
-    signal mem_read     : inout std_ulogic;
-    signal mem_bus_in   : inout word;
+    signal mem_read     : out std_ulogic;
+    signal mem_bus_in   : in word;
     clk                 : in std_ulogic;
-    result              : inout word);
+    result              : out word);
 
 
   procedure memory_write(
     addr                : in word;    
-    signal mem_addr     : inout word;--unsigned(63 downto 0);
+    signal mem_addr     : out word;--unsigned(63 downto 0);
     reset               : in std_ulogic;
     mem_ready           : in std_ulogic;
-    signal mem_write    : inout std_ulogic;
-    signal mem_bus_out  : inout word;
+    signal mem_write    : out std_ulogic;
+    signal mem_bus_out  : out word;
     clk                 : in std_ulogic;
     data                : in word);
 
@@ -32,13 +32,13 @@ end memory_access;
 package body memory_access is
   procedure memory_read(
     addr                : in word;
-    signal mem_addr     : inout word;
+    signal mem_addr     : out word;
     reset               : in std_ulogic;
     mem_ready           : in std_ulogic;
-    signal mem_read     : inout std_ulogic;
-    signal mem_bus_in   : inout word;
+    signal mem_read     : out std_ulogic;
+    signal mem_bus_in   : in word;
     clk                 : in std_ulogic;
-    result              : inout word) is
+    result              : out word) is
     -- used 'global' signals are:
     --   clk, reset, ready, read, a_bus, d_busin
     -- read data from addr in memory
@@ -87,11 +87,11 @@ package body memory_access is
 
   procedure memory_write(   
     addr                : in word;
-    signal mem_addr     : inout word;
+    signal mem_addr     : out word;
     reset               : in std_ulogic;
     mem_ready           : in std_ulogic;
-    signal mem_write    : inout std_ulogic;
-    signal mem_bus_out  : inout word;
+    signal mem_write    : out std_ulogic;
+    signal mem_bus_out  : out word;
     clk                 : in std_ulogic;
     data                : in word) is
   -- used 'global' signals are:

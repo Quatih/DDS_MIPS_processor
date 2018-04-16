@@ -39,7 +39,7 @@ begin
 		then
 			case inst is 
 			 when "000" =>   Z <= std_logic_vector(x"00000000" & unsigned(op1) + unsigned(op2));			-----ADD 
- 	     when "001" =>   Z <= multiply(op1,op2);					    	-----Mult
+ 	     	 when "001" =>   Z <= multiply(op1,op2);					    	-----Mult
 			 when "010" =>   Z <= std_logic_vector(x"00000000" & unsigned(op1) - unsigned(op2));			-----Subs
 			 when "011" =>   Z <= std_logic_vector(x"00000000" & unsigned(op1) / unsigned(op2));			-----Div
 			 when "100" =>   Z <= std_logic_vector(unsigned(op1) * unsigned(op2));							-----

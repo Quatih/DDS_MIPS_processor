@@ -17,7 +17,7 @@ done 		: out std_logic;
 product	: out std_logic_vector(2*W-1 downto 0)
 );
 end booth_mult;
-
+ 
 architecture arch of booth_mult is
 type state_type is(IDLE, BUSY);
 attribute ENUM_ENCODING						: string;	-- used for explicit state machine encoding

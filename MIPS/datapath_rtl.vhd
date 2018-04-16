@@ -6,6 +6,7 @@ use ieee.numeric_std.all;
 use work.processor_types.all;
 use work.memory_config.all;
 use work.control_names.all;
+use work.memory_access.all;
 entity datapath is
   generic (word_length : natural);
   port (
@@ -36,7 +37,7 @@ architecture rtl of datapath is
   signal spec_reg : std_logic_vector(word_length*2-1 downto 0); --special register with lo, hi
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
-  signal pc       : unsigned(word_length*2-1 downto 0);
+  signal pc       : unsigned(word_length-1 downto 0); -- unsigned(word_length*2-1 downto 0);
   signal reg1, reg2, regw : word;
   signal instruction : word;
     alias opcode : op_code is instruction(31 downto 26);
@@ -78,6 +79,25 @@ begin
   -- using control conversion
   main : process
     variable regresult : word;
+
+    -- Proxy mem_read, calls mem_read in pkg_memory_access
+    procedure memory_read(
+      addr : in word; --std_logic_vector(word_length*2-1 downto 0);
+      data : inout word
+    ) is
+    begin
+      memory_read(addr, mem_addr, reset, mem_ready, mem_read, mem_bus_in, clk, data);
+    end procedure;
+
+    -- Proxy mem_write, calls mem_write in pkg_memory_access
+    procedure memory_write(
+      addr    : in word; --std_logic_vector(word_length*2-1 downto 0);
+      result  : inout word
+    ) is
+    begin
+      memory_write(addr, mem_addr, reset, mem_ready, mem_write, mem_bus_out, clk, result);
+    end procedure;
+
   begin
     if(reset = '1') then
       mem_read <= '0';

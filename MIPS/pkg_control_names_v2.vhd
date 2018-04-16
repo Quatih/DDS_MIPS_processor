@@ -13,21 +13,33 @@
 -- Contents         : control signals used in datapath and controller
 --
 -- Change Log 
---   Author         : 
---   Email          : 
---   Date           :  
---   Changes        :
+--   Author         : Sighvatur I. Gislason
+--   Email          : hvatig@gmail.com
+--   Date           : 3.4.2018  
+--   Changes        : adjust control signals and added alu signals
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
 package control_names is
   type control_signals is
-     (read_rt, read_rs, write_rd, write_mem,
-      read_mem, mem_rd, ALU_src, pc_adj);
-  type alu_signals is
-    (alu_and, alu_or, alu_add, alu_sub, alu_div, alu_mult);
-  type alu_bus is array (alu_signals) of std_logic;
+   (rdest,  --read from rt (0) or rd (1) 
+    msrc,   --addr input to mem, pc(0) or alu(1)
+    -- mdst,   --destination of memory read, instruction(0), reg(1) 
+    rwrite, --write to a register (1)
+    rread,  --read from register(1)
+    mwrite, --write to memory (1)
+    mread,  --read from memory (1)
+    alusrc, --source of op2 of alu, rsource(0) or seimm(1)
+    immse,  --sign extend to wl(0) or sl to wl(1)
+    wspreg, --write to special register
+    rspreg, --read from special registers to rsource
+    lohisel,--lo(0), hi(1) to rsource
+    pcincr, --increment the pc
+    pcimm   --add to pc from imm(1)
+    );  
+
+
   -- do not change the following type declaration
   type control_bus is array (control_signals) of std_logic;  
   
@@ -59,29 +71,3 @@ package body control_names is
 
 end control_names;
 
-library ieee;
-use ieee.std_logic_1164.all;
-use work.control_names.all;
-entity test is
-  port (vo : out std_logic_vector(0 to control_bus'length-1);
-        co : out control_bus);
-end test;
-
-architecture bhv of test is
-  signal v : std_logic_vector(0 to control_bus'length-1);
-begin
-  process
-    variable c : control_bus;
-  begin
-    c:=(enable_r1 | enable_r3 =>'1', others => '0');
-    v <= ctlr2std(c);
-    wait for 20 ns;
-    c:=(enable_r2 | addition =>'1', others => '0');
-    v <= ctlr2std(c);    
-    wait;
-  end process;
-  
-  vo <= v;
-  co <=std2ctlr(v);
-  
-end bhv;

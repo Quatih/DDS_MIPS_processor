@@ -104,7 +104,7 @@ begin
       mem_write <= '0';
       opc <= (others => '0');
       rtopc <= (others => '0');
-      
+      pc <= 
       loop
 				wait until clk = '1';
 				exit when reset = '0';
@@ -152,6 +152,7 @@ begin
       end if;
     elsif control(wspreg) = '1' then
       spec_reg <= alu_result;
+      -- or add if(lohisel)
     elsif control(mread) = '1' then --read mem
       if control(msrc) = '1' then --addr from alu
         memory_read(std_logic_vector(unsigned(aluword)),regresult);

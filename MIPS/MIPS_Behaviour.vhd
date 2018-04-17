@@ -47,14 +47,14 @@ architecture behaviour of mips_processor is
         else
           cc_v:='0'; 
           if(data <0) then
-              cc_n:='1';
+            cc_n:='1';
           else
-              cc_n := '0';
+            cc_n := '0';
           end if; 
           if(data = 0) then
-              cc_z := '1';
+            cc_z := '1';
           else
-              cc_z := '0';       
+            cc_z := '0';       
           end if;
           regval := std_logic_vector(to_signed(data, word_length));
         end if;

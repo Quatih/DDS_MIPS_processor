@@ -7,37 +7,38 @@ use work.memory_config.all;
 use work.control_names.all;
 package memory_access is
   procedure memory_read (
-    addr   : in unsigned(word_length*2-1 downto 0);
-    mem_addr : in word;
-    reset : in std_ulogic;
-    mem_ready : in std_ulogic;
-    mem_read : in std_ulogic;
-    mem_bus_in : in word;
-    clk : in std_ulogic;
-    result : out word);
-    
-    procedure memory_write(    
-    addr   : in unsigned(word_length*2-1 downto 0);
-    mem_addr : in word;
-    reset : in std_ulogic;
-    mem_ready : in std_ulogic;
-    mem_write : in std_ulogic;
-    mem_bus_out : in word;
-    clk : in std_ulogic;
-    data : in word);
+    addr                : in word;
+    signal mem_addr     : out word;
+    reset               : in std_ulogic;
+    mem_ready           : in std_ulogic;
+    signal mem_read     : out std_ulogic;
+    signal mem_bus_in   : in word;
+    clk                 : in std_ulogic;
+    result              : out word);
+
+
+  procedure memory_write(
+    addr                : in word;    
+    signal mem_addr     : out word;--unsigned(63 downto 0);
+    reset               : in std_ulogic;
+    mem_ready           : in std_ulogic;
+    signal mem_write    : out std_ulogic;
+    signal mem_bus_out  : out word;
+    clk                 : in std_ulogic;
+    data                : in word);
 
 end memory_access;
 
-
-
 package body memory_access is
-  procedure memory_read (addr   : in unsigned(word_length*2-1 downto 0);
-                             mem_addr : in word;
-                             reset : in std_ulogic;
-                             mem_ready : in std_ulogic;
-                             mem_read : in std_ulogic;
-                             mem_bus_in : in word;
-                             result : out word) is
+  procedure memory_read(
+    addr                : in word;
+    signal mem_addr     : out word;
+    reset               : in std_ulogic;
+    mem_ready           : in std_ulogic;
+    signal mem_read     : out std_ulogic;
+    signal mem_bus_in   : in word;
+    clk                 : in std_ulogic;
+    result              : out word) is
     -- used 'global' signals are:
     --   clk, reset, ready, read, a_bus, d_busin
     -- read data from addr in memory
@@ -85,14 +86,14 @@ package body memory_access is
   end memory_read;                         
 
   procedure memory_write(   
-    addr   : in unsigned(word_length*2-1 downto 0);
-    mem_addr : in word;
-    reset : in std_ulogic;
-    mem_ready : in std_ulogic;
-    mem_write : in std_ulogic;
-    mem_bus_out : in word;
-    clk : in std_ulogic;
-    data : in word)) is
+    addr                : in word;
+    signal mem_addr     : out word;
+    reset               : in std_ulogic;
+    mem_ready           : in std_ulogic;
+    signal mem_write    : out std_ulogic;
+    signal mem_bus_out  : out word;
+    clk                 : in std_ulogic;
+    data                : in word) is
   -- used 'global' signals are:
   --   clk, reset, ready, write, a_bus, d_busout
   -- write data to addr in memory
@@ -111,7 +112,6 @@ package body memory_access is
       exit when mem_ready='0';
       wait until clk='1';
     end loop;
-
     mem_bus_out <= data;
     wait until clk='1';
     if reset='1' then
@@ -135,4 +135,4 @@ package body memory_access is
     mem_bus_out <= (others => '-');
     mem_addr <= (others => '-');
   end memory_write;
-end
+end;

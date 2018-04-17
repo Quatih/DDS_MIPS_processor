@@ -8,7 +8,8 @@ ENTITY ALU_design IS
 				generic (datin_bus : integer := 32);
 		PORT (
 				result 			  : OUT std_logic_vector (2*datin_bus- 1 downto 0 );
-				ready, cc		  : OUT std_logic;
+				ready		  : OUT std_logic;
+				cc : out std_logic_vector(2 downto 0);
 				clk, start,reset : IN std_logic;
 				inst 		  		  : IN std_logic_vector(2 downto 0);
 				op1,op2		     : IN std_logic_vector(datin_bus-1 downto 0)  
@@ -16,8 +17,8 @@ ENTITY ALU_design IS
 END ALU_design;
 
 ARCHITECTURE ALU OF AlU_design IS
-     signal Z : std_logic_vector(2*datin_bus-1 downto 0) := (others => '0');
-	  signal cci :  std_logic := '0';
+    signal Z : std_logic_vector(2*datin_bus-1 downto 0) := (others => '0');
+	  signal cci :  std_logic_vector(2 downto 0);
 	  signal readyi : std_logic := '0';
 	  
 Function multiply(op1,op2 : std_logic_vector) return std_logic_vector is 
@@ -34,7 +35,7 @@ begin
 		if (reset = '1') then
 			Z <= (others => '0');
 			readyi  <= '0';
-			cci     <= '0';
+			cci     <= (others => '0');
 		elsif (start = '1')
 		then
 			case inst is 

@@ -6,25 +6,25 @@ use ieee.numeric_std.all;
 use work.processor_types.all;
 use work.memory_config.all;
 use work.control_names.all;
-use work.memory_access.all;
+--use work.memory_access.all;
 entity datapath is
   generic (word_length : natural);
   port (
-    clk       : in std_ulogic;
-    reset     : in std_ulogic;
-    ctrl_std  : in std_logic_vector(0 to control_bus'length-1);
-    ready     : out std_logic;
-    opc       : out op_code;
-    rtopc     : out op_code;
-    alu_op1   : out word;
-    alu_op2   : out word;
-    alu_result: in std_logic_vector(word_length*2-1 downto 0);
-    mem_bus_in : in std_logic_vector(word_length-1 downto 0);
+    clk         : in  std_ulogic;
+    reset       : in  std_ulogic;
+    ctrl_std    : in  std_logic_vector(0 to control_bus'length-1);
+    ready       : out std_logic;
+    opc         : out op_code;
+    rtopc       : out op_code;
+    alu_op1     : out word;
+    alu_op2     : out word;
+    alu_result  : in  std_logic_vector(word_length*2-1 downto 0);
+    mem_bus_in  : in  std_logic_vector(word_length-1 downto 0);
     mem_bus_out : out std_logic_vector(word_length-1 downto 0);
-    mem_addr : out std_logic_vector(word_length-1 downto 0);
-    mem_write : out std_ulogic;
-    mem_read : out std_ulogic;
-    mem_ready : in std_ulogic
+    mem_addr    : out std_logic_vector(word_length-1 downto 0);
+    mem_write   : out std_ulogic;
+    mem_read    : out std_ulogic;
+    mem_ready   : in  std_ulogic
     );
 end datapath;
 
@@ -85,29 +85,112 @@ begin
     -- Proxy mem_read, calls mem_read in pkg_memory_access
     procedure memory_read(
       addr : in word; --std_logic_vector(word_length*2-1 downto 0);
-      data : out word
+      result : out word
     ) is
-    begin
-      memory_read(addr, mem_addr, reset, mem_ready, mem_read, mem_bus_in, clk, data);
-    end memory_read;
+      -- used 'global' signals are:
+      --   clk, reset, ready, read, a_bus, d_busin
+      -- read data from addr in memory
+      begin
+        -- put address on output
 
-    -- Proxy mem_write, calls mem_write in pkg_memory_access
+      mem_addr <= std_logic_vector(addr);
+      wait until clk='1';
+      if reset='1' then
+        return;
+      end if;
+
+      loop -- ready must be low (handshake)
+        if reset='1' then
+          return;
+        end if;
+        exit when mem_ready='0';
+        wait until clk='1';
+      end loop;
+
+      mem_read <= '1';
+      wait until clk='1';
+      if reset='1' then
+        return;
+      end if;
+
+      loop
+        wait until clk='1';
+        if reset='1' then
+          return;
+        end if;
+
+        if mem_ready='1' then
+          result := mem_bus_in;
+          exit;
+        end if;    
+      end loop;
+      wait until clk='1';
+      if reset='1' then
+        return;
+      end if;
+
+      mem_read <= '0'; 
+      mem_addr <= (others => '-');
+    end memory_read;                    
+
     procedure memory_write(
       addr    : in word; --std_logic_vector(word_length*2-1 downto 0);
-      result  : in word
+      data  : in word
     ) is
+      -- used 'global' signals are:
+      --   clk, reset, ready, write, a_bus, d_busout
+      -- write data to addr in memory
     begin
-      memory_write(addr, mem_addr, reset, mem_ready, mem_write, mem_bus_out, clk, result);
+      -- put address on output
+      mem_addr <= std_logic_vector(addr);
+      wait until clk='1';
+      if reset='1' then
+        return;
+      end if;
+
+      loop -- ready must be low (handshake)
+        if reset='1' then
+          return;
+        end if;
+        exit when mem_ready='0';
+        wait until clk='1';
+      end loop;
+      mem_bus_out <= data;
+      wait until clk='1';
+      if reset='1' then
+        return;
+      end if;  
+      mem_write <= '1';
+
+      loop
+        wait until clk='1';
+        if reset='1' then
+          return;
+        end if;
+          exit when mem_ready='1';  
+      end loop;
+      wait until clk='1';
+      if reset='1' then
+        return;
+      end if;
+      --
+      mem_write <= '0';
+      mem_bus_out <= (others => '-');
+      mem_addr <= (others => '-');
     end memory_write;
 
   begin
     if(reset = '1') then
       mem_read <= '0';
       mem_write <= '0';
+      mem_addr <= (others => '-');
+      mem_bus_out <= (others => '0');
       opc <= (others => '0');
       rtopc <= (others => '0');
-      pc <= text_base_address;
+      pc <= to_unsigned(text_base_address, word_length);
       ready_i <= '0';
+      alu_op1 <= (others => '0');
+      alu_op2 <= (others => '0');
       loop
 				wait until clk = '1';
 				exit when reset = '0';

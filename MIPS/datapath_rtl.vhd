@@ -37,7 +37,7 @@ architecture rtl of datapath is
   signal spec_reg : std_logic_vector(word_length*2-1 downto 0); --special register with lo, hi
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
-  signal pc       : unsigned(word_length-1 downto 0); -- unsigned(word_length*2-1 downto 0);
+  signal pc  : word; -- unsigned(word_length*2-1 downto 0);
   signal instruction : word;
     alias opcode : op_code is instruction(31 downto 26);
     alias rs : reg_code is instruction(25 downto 21);
@@ -178,7 +178,6 @@ begin
       mem_bus_out <= (others => '-');
       mem_addr <= (others => '-');
     end memory_write;
-
   begin
     if(reset = '1') then
       mem_read <= '0';
@@ -187,27 +186,37 @@ begin
       mem_bus_out <= (others => '0');
       opc <= (others => '0');
       rtopc <= (others => '0');
-      pc <= to_unsigned(text_base_address, word_length);
+      pc <= std_logic_vector(to_unsigned(text_base_address, word_length));
+      instruction <= (others => '0');
       ready_i <= '0';
       op1 <= (others => '0');
       op2 <= (others => '0');
       regfile <= (others => (others => '0'));
       spec_reg <= (others => '0');
       loop
-				wait until clk = '1';
+				wait until rising_edge(clk);
 				exit when reset = '0';
 			end loop;
     end if;
     wait until rising_edge(clk);
-
     ready_i <= '0';
+    loop
+      if(unsigned(ctrl_std) = to_unsigned(0, ctrl_std'length)) then
+        wait until rising_edge(clk);
+      else
+        exit;
+      end if;
+      exit when reset = '1';
+    end loop;
+    
     if(control(pcincr) = '1') then
-      pc <= pc + 4;
+      pc <= std_logic_vector(unsigned(pc) + 4);
     elsif(control(pcimm) = '1') then
       regresult(31 downto 18) := (others => '0');
       regresult(17 downto 2) := imm;
       regresult(1 downto 0) := (others => '0');
-      pc <= unsigned(regresult);
+
+      pc <= std_logic_vector(signed(pc) + signed(regresult)); -- possibly error if signed(pc) is outside of mem range
     end if;
   
     --regstuff
@@ -256,7 +265,7 @@ begin
       read_reg(rt, regfile, regresult);
       -- unsigned conversion because the output of the alu is signed, and memory addresses are unsigned
       memory_write(std_logic_vector(unsigned(aluword)),regresult); 
-      ready_i <= '1';
+      ready_i <= '1'; -- ready used for memread and write ops
     end if;
     
   end process;

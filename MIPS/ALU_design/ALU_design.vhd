@@ -93,6 +93,10 @@ begin
 		calc <= (others => '0');
 		readyi  <= '0';
 		cci     <= (others => '0');
+		loop
+			wait until rising_edge(clk);
+			exit when reset = '0';
+		end loop;
 	end if;
 	wait until rising_edge(clk);
 	if start = '1' then
@@ -103,20 +107,20 @@ begin
 		lop2(word_length*2-1 downto word_length) := (others =>'0');
 		case inst is
 			when alu_add => calc <= lop1 + lop2;
-											set_cc(calc,cc);
+											set_cc(calc,cci);
 		when alu_mult => 	
 											--calc <= multiply(op1,op2);
 											mult_booth(op1, op2, calc);
-											set_cc(calc,cc);
+											set_cc(calc,cci);
 		when alu_sub 	=> 	calc <= lop1 - lop2;
-											set_cc(calc,cc);
+											set_cc(calc,cci);
 		when alu_div =>   calc(word_length*2-1 downto word_length) <= signed(op1) mod signed(op2);
 											calc(word_length-1 downto 0) <= signed(op1) / signed(op2);
-											set_cc(calc,cc);
+											set_cc(calc,cci);
 		when alu_or 	=> 	calc(word_length-1 downto 0) <= signed(op1 or op2);
-											set_cc(calc,cc);
+											set_cc(calc,cci);
 		when alu_and 	=> 	calc(word_length-1 downto 0) <= signed(op1 and op2);
-											set_cc(calc,cc);
+											set_cc(calc,cci);
 		when alu_lt		=> 	if(signed(op1) < signed(op2)) then
 												calc <= to_signed(1, word_length*2);
 												cc_v <= '1';

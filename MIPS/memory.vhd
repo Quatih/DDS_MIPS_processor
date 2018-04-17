@@ -85,7 +85,7 @@ BEGIN
 "010f4022", --  sub $8,$8,$15         44   	sub $8, $8, $15  # n=n-1	
 "0401fff8", --  bgez $0,-8            45   	b nfac           
 "04010010", --  bgez $0,16            46   ffac:	b ff
-"3c011001", --  lui $1,4097           50     lw $10, N              # number of terms; assembled in LUI and LW (this depends on location of N)
+"3c011001", --  lui $1,4097           50   ser  lw $10, N              # number of terms; assembled in LUI and LW (this depends on location of N)
 "8c2a0000", --  lw $10,0($1)               
 "3c011001", --  lui $1,4097           51     lw $13, X              # value x
 "8c2d0004", --  lw $13,4($1)               

@@ -38,7 +38,6 @@ architecture rtl of datapath is
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
   signal pc       : unsigned(word_length-1 downto 0); -- unsigned(word_length*2-1 downto 0);
-  signal reg1, reg2, regw : word;
   signal instruction : word;
     alias opcode : op_code is instruction(31 downto 26);
     alias rs : reg_code is instruction(25 downto 21);
@@ -191,6 +190,8 @@ begin
       ready_i <= '0';
       alu_op1 <= (others => '0');
       alu_op2 <= (others => '0');
+      regfile <= (others => (others => '0'));
+      spec_reg <= (others => '0');
       loop
 				wait until clk = '1';
 				exit when reset = '0';
@@ -246,8 +247,8 @@ begin
       else -- addr from pc
         memory_read(std_logic_vector(pc), regresult);-- not sure if correct pc is loaded, because signal
         instruction <= regresult;
-        opc <= opcode; -- not sure if works because of signals, needs testing
-        rtopc <= rtype; -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
+        opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
+        rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
       end if;
       ready_i <= '1';
     elsif control(mwrite) = '1' then -- write memory

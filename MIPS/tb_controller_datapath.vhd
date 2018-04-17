@@ -96,7 +96,7 @@ dp:datapath
           alu_result, mem_out_bus, mem_in_bus, mem_addr, mem_write, mem_read, 
           mem_ready);
 mem:memory
-  port map(mem_in_bus, mem_out_bus, mem_addr, clk, mem_write, mem_read, mem_ready);
+  port map(mem_out_bus, mem_in_bus, mem_addr, clk, mem_write, mem_read, mem_ready);
 alu:alu_design
   generic map (word_length)
   port map(alu_result, alu_ready, cc, clk, alu_start, reset, alu_ctrl, alu_op1, alu_op2);

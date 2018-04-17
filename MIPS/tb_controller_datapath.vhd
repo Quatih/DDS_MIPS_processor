@@ -60,15 +60,15 @@ component controller is
   end component memory;
 
   component alu_design is
-  generic (datin_bus : integer := 32);
-  port (
-    result 			  : out std_logic_vector (2*datin_bus- 1 downto 0 );
-    ready		  : out std_logic;
-    cc : out std_logic_vector(2 downto 0);
-    clk, start,reset : in std_logic;
-    inst 		  		  : in std_logic_vector(2 downto 0);
-    op1,op2		     : in std_logic_vector(datin_bus-1 downto 0)  
-    );
+		generic (word_length : integer := 32);
+		port (
+				result 		: out std_logic_vector (2*word_length- 1 downto 0 );
+				ready		  : out std_logic;
+				cc 				: out cc_type;
+				clk, start,reset : in std_logic;
+				inst 		  : in alu_instr;
+				op1, op2 	: in std_logic_vector(word_length-1 downto 0)  
+				);
   end component alu_design;
   
   signal mem_in_bus, mem_out_bus, mem_addr : word;

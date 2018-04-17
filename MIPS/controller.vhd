@@ -22,6 +22,7 @@ end controller;
 
 
 architecture behaviour of controller is
+	signal cc_reg : cc_type;
 	alias cc_n : std_logic IS cc(2); -- negative
 	alias cc_z : std_logic IS cc(1); -- zero
 	alias cc_v : std_logic IS cc(0); -- overflow/compare
@@ -35,7 +36,13 @@ begin
 			begin
 				alu_ctrl <= alu_code;
 				alu_start <= '1';
-				wait until alu_ready = '1';
+				loop
+					wait until clk = '1';
+					if reset = '1' then 
+						return;
+					end if;
+					exit when alu_ready = '1';
+				end loop;
 				alu_start <= '0';
 				alu_ctrl <= (others =>'-');
 		end procedure;
@@ -44,6 +51,7 @@ begin
 			control <= (others => '0');
 			alu_ctrl <= (others => '0');
 			alu_start <= '0';
+			cc_reg <= (others => '0');
 			loop
 				wait until clk = '1';
 				exit when reset = '0';
@@ -77,6 +85,7 @@ begin
 					when add  =>  
 						control <= (rread => '1', others => '0'); -- move to alu inputs, 
 						send_alu(alu_add);
+						cc_reg <= cc;
 						if(cc_v = '1') then
 							assert false report "overflow situation in arithmetic operation" severity 
 							note;
@@ -86,6 +95,7 @@ begin
 					when subop=>  
 						control <= (rread => '1', others => '0'); -- move to alu inputs, 
 						send_alu(alu_sub);
+						cc_reg <= cc;
 						if(cc_v = '1') then
 							assert false report "overflow situation in arithmetic operation" severity 
 							note;
@@ -114,12 +124,14 @@ begin
 				when beq  =>
 					control <= (rread => '1', others => '0'); --calc addr
 					send_alu(alu_sub);
+					cc_reg <= cc;
 					if(cc_v = '1') then 
 						control <= (pcimm => '1', others => '0');
 					end if;
 				when bgez	=>
 					control <= (rread => '1', others => '0'); --calc addr
 					send_alu(alu_gz);
+					cc_reg <= cc;
 					if(cc_v = '1') then
 						control <= (pcimm => '1', others => '0');
 					end if; 

@@ -96,6 +96,7 @@ begin
 	end if;
 	wait until rising_edge(clk);
 	if start = '1' then
+		readyi <= '0';
 		lop1(word_length-1 downto 0) := signed(op1);
 		lop1(word_length*2-1 downto word_length) := (others =>'0');
 		lop2(word_length-1 downto 0) := signed(op2);

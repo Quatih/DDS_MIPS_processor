@@ -31,7 +31,7 @@ package control_names is
     mwrite, --write to memory (1)
     mread,  --read from memory (1)
     alusrc, --source of op2 of alu, rsource(0) or seimm(1)
-    immse,  --sign extend to wl(0) or sl to wl(1)
+    immsl,  --sign extend to wl(0) or sl to wl(1)
     wspreg, --write to special register
     rspreg, --read from special registers to rsource
     lohisel,--lo(0), hi(1) to rsource

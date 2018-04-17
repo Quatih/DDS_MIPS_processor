@@ -48,7 +48,7 @@ architecture rtl of datapath is
   signal control : control_bus;
   signal ready_i : std_ulogic;
   alias aluword : word is alu_result(word_length -1 downto 0);
-
+  signal op1, op2 : word;
 
 
   procedure read_reg(source          : in reg_code;
@@ -77,7 +77,8 @@ begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
   ready <= ready_i;
-
+  alu_op1 <= op1;
+  alu_op2 <= op2;
   main : process
     variable regresult : word;
 
@@ -188,8 +189,8 @@ begin
       rtopc <= (others => '0');
       pc <= to_unsigned(text_base_address, word_length);
       ready_i <= '0';
-      alu_op1 <= (others => '0');
-      alu_op2 <= (others => '0');
+      op1 <= (others => '0');
+      op2 <= (others => '0');
       regfile <= (others => (others => '0'));
       spec_reg <= (others => '0');
       loop
@@ -212,18 +213,18 @@ begin
     --regstuff
     if control(rread) = '1' then
       read_reg(rs, regfile, regresult); 
-      alu_op1 <= regresult;
+      op1 <= regresult;
       if control(alusrc) = '1' then -- src is imm from instr
-        if control(immse) = '1' then
-            alu_op2(31 downto 16) <= (others => '0');
-            alu_op2(15 downto 0) <= imm;
-          else
-            alu_op2(31 downto 16) <= (others => imm(15)); -- assign sign extended of imm
-            alu_op2(15 downto 0) <= imm;
-          end if;
+        if control(immsl) = '1' then -- shift left sign extend
+          op2(15 downto 0) <= (others => '0');
+          op2(31 downto 16) <= imm;
+        else -- sign extend
+          op2(31 downto 16) <= (others => imm(15)); -- sign extend imm
+          op2(15 downto 0) <= imm;
+        end if;
       else -- src is rt 
         read_reg(rt, regfile, regresult);
-        alu_op2 <= regresult;
+        op2 <= regresult;
       end if;
     elsif control(rwrite) = '1' then
       if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)

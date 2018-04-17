@@ -34,10 +34,19 @@ begin
 	  -- procedure to initiate alu
 		procedure send_alu(alu_code : alu_instr) is
 			begin
+				
+				loop -- wait until dp has finished
+					wait until rising_edge(clk);
+					control <= (others => '0');
+					if reset = '1' then 
+						return;
+					end if;
+					exit when ready = '1';
+				end loop;
 				alu_ctrl <= alu_code;
 				alu_start <= '1';
-				loop
-					wait until clk = '1';
+				loop -- wait until alu is finished
+				wait until rising_edge(clk);
 					if reset = '1' then 
 						return;
 					end if;
@@ -58,8 +67,13 @@ begin
 			end loop;
 		elsif(rising_edge(clk)) then
 			control <= (mread => '1', pcincr => '1', others => '0'); 
+			wait until rising_edge(clk);
 			loop 
 				wait until rising_edge(clk);
+				control <= (others => '0');
+				if reset = '1' then 
+					exit seq;
+				end if;
 				exit when ready = '1';
 			end loop;
 			case opc is --decode instruction 
@@ -134,6 +148,7 @@ begin
 					cc_reg <= cc;
 					if(cc_v = '1') then
 						control <= (pcimm => '1', others => '0');
+						wait until ready = '1';
 					end if; 
 				when ori	=>
 					control <= (rread => '1', alusrc => '1', others => '0');
@@ -144,7 +159,7 @@ begin
 					send_alu(alu_add);
 					control <= (rwrite => '1', others => '0');
 				when lui  =>
-					control <= (rread => '1', alusrc => '1', immse => '1', others => '0');
+					control <= (rread => '1', alusrc => '1', immsl => '1', others => '0');
 					send_alu(alu_add); -- works because in lui, rs is 0;
 					control <= (rwrite => '1', others => '0');
 				when others =>

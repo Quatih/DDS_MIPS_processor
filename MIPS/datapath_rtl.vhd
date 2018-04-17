@@ -19,9 +19,9 @@ entity datapath is
     alu_op1     : out word;
     alu_op2     : out word;
     alu_result  : in  std_logic_vector(word_length*2-1 downto 0);
-    mem_bus_in  : in  std_logic_vector(word_length-1 downto 0);
-    mem_bus_out : out std_logic_vector(word_length-1 downto 0);
-    mem_addr    : out std_logic_vector(word_length-1 downto 0);
+    mem_bus_in  : in  word;
+    mem_bus_out : out word;
+    mem_addr    : out word;
     mem_write   : out std_ulogic;
     mem_read    : out std_ulogic;
     mem_ready   : in  std_ulogic

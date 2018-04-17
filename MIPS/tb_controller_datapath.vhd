@@ -38,9 +38,9 @@ component controller is
       alu_op1     : out word;
       alu_op2     : out word;
       alu_result  : in  std_logic_vector(word_length*2-1 downto 0);
-      mem_bus_in  : in  std_logic_vector(word_length-1 downto 0);
-      mem_bus_out : out std_logic_vector(word_length-1 downto 0);
-      mem_addr    : out std_logic_vector(word_length-1 downto 0);
+      mem_bus_in  : in  word;
+      mem_bus_out : out word;
+      mem_addr    : out word;
       mem_write   : out std_ulogic;
       mem_read    : out std_ulogic;
       mem_ready   : in  std_ulogic
@@ -71,7 +71,7 @@ component controller is
     );
   end component alu_design;
   
-  signal mem_in_bus,mem_out_bus,mem_addr : word;
+  signal mem_in_bus, mem_out_bus, mem_addr : word;
   signal mem_read,mem_write,mem_ready    : std_ulogic;
   signal control_bus : std_logic_vector(0 to control_bus'length-1);
   signal reset                          : std_ulogic := '1';

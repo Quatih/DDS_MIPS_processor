@@ -47,7 +47,7 @@ architecture rtl of datapath is
     alias imm : std_logic_vector(15 downto 0) is instruction(15 downto 0);
     alias rtype : op_code is instruction(5 downto 0);
   signal control : control_bus;
-  
+  signal ready_i : std_ulogic;
   alias aluword : word is alu_result(word_length -1 downto 0);
 
 
@@ -77,6 +77,8 @@ architecture rtl of datapath is
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
+  ready <= ready_i;
+
   main : process
     variable regresult : word;
 
@@ -104,7 +106,8 @@ begin
       mem_write <= '0';
       opc <= (others => '0');
       rtopc <= (others => '0');
-      pc <= 
+      pc <= text_base_address;
+      ready_i <= '0';
       loop
 				wait until clk = '1';
 				exit when reset = '0';
@@ -112,6 +115,7 @@ begin
     end if;
     wait until rising_edge(clk);
 
+    ready_i <= '0';
     if(control(pcincr) = '1') then
       pc <= pc + 4;
     elsif(control(pcimm) = '1') then
@@ -137,7 +141,6 @@ begin
         read_reg(rt, regfile, regresult);
         alu_op2 <= regresult;
       end if;
-      
     elsif control(rwrite) = '1' then
       if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
         if control(lohisel) = '1' then --hi
@@ -162,13 +165,15 @@ begin
         instruction <= regresult;
         opc <= opcode; -- not sure if works because of signals, needs testing
         rtopc <= rtype; -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
-        ready <= '1';
       end if;
+      ready_i <= '1';
     elsif control(mwrite) = '1' then -- write memory
       read_reg(rt, regfile, regresult);
       -- unsigned conversion because the output of the alu is signed, and memory addresses are unsigned
       memory_write(std_logic_vector(unsigned(aluword)),regresult); 
+      ready_i <= '1';
     end if;
+    
   end process;
 
 end rtl;

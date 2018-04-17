@@ -38,7 +38,7 @@ begin
 				exit when reset = '0';
 			end loop;
 		elsif(rising_edge(clk)) then
-			control <= (mread => '1', others => '0'); 
+			control <= (mread => '1', 'pcincr' => '1', others => '0'); 
 			loop 
 				wait until rising_edge(clk);
 				exit when ready = '1';
@@ -101,6 +101,7 @@ begin
 					alu_ctrl <= alu_add;
 					wait until alu_ready = '1';
 					control <= (mread => '1', msrc => '1', others => '0'); --load word, stored in rd
+					wait until ready = '1';
 				when sw   => 
 					control <= (rread => '1', alusrc => '1', others => '0'); --calc addr
 					alu_ctrl <= alu_add;
@@ -112,7 +113,7 @@ begin
 					control <= (rread => '1', others => '0'); --calc addr
 					alu_ctrl <= alu_sub;
 					wait until alu_ready = '1';
-					if(cc_z = '1') then
+					if(cc_v = '1') then 
 						control <= (pcimm => '1', others => '0');
 					end if;
 				when bgez	=>

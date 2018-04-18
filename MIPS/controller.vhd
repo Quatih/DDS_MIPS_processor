@@ -144,7 +144,7 @@ begin
 					control <= (rread => '1', others => '0'); --calc addr
 					send_alu(alu_sub);
 					cc_reg <= cc;
-					if(cc_v = '1') then 
+					if(cc_z = '1') then 
 						control <= (pcimm => '1', others => '0');
 						wait until rising_edge(clk);
 					end if;

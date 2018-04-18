@@ -19,9 +19,9 @@ architecture alu of alu_design is
 
 	signal calc 	: signed (2*word_length-1 downto 0);
 	signal cci 		:  cc_type;
-		alias cc_n 	: std_logic IS cci(2); -- negative
-		alias cc_z 	: std_logic IS cci(1); -- zero
-		alias cc_v 	: std_logic IS cci(0); -- overflow/compare
+		alias cc_n 	: std_logic IS cc(2); -- negative
+		alias cc_z 	: std_logic IS cc(1); -- zero
+		alias cc_v 	: std_logic IS cc(0); -- overflow/compare
 	signal readyi : std_logic := '0';
 	constant zero : signed(31 downto 0) := (others => '0');
 
@@ -82,7 +82,7 @@ architecture alu of alu_design is
 			when others => prod_sft_add := (others => '0'); 
 			end case;
 		end loop;
-		result <= signed(prod_sft_add(ub downto 1));
+		result <= signed(prod_sft_add(ub downto 1)); -- result is where??
 	end mult_booth;
 begin
 	seq: process
@@ -102,25 +102,30 @@ begin
 	if start = '1' then
 		readyi <= '0';
 		lop1(word_length-1 downto 0) := signed(op1);
-		lop1(word_length*2-1 downto word_length) := (others =>'0');
+		lop1(word_length*2-1 downto word_length) := (others => op1(31));
 		lop2(word_length-1 downto 0) := signed(op2);
-		lop2(word_length*2-1 downto word_length) := (others =>'0');
+		lop2(word_length*2-1 downto word_length) := (others => op2(31));
 		case inst is
 			when alu_add => calc <= lop1 + lop2;
-											set_cc(calc,cci);
+											set_cc(calc,cc);
 		when alu_mult => 	
-											--calc <= multiply(op1,op2);
-											mult_booth(op1, op2, calc);
-											set_cc(calc,cci);
+											calc <= multiply(op1,op2);
+											--mult_booth(op1, op2, calc);
+											set_cc(calc,cc);
 		when alu_sub 	=> 	calc <= lop1 - lop2;
-											set_cc(calc,cci);
+											--set_cc(calc,cc);
+											if(calc = 0) then
+												cc_z <= '1';
+												else 
+												cc_z <= '0';
+											end if;
 		when alu_div =>   calc(word_length*2-1 downto word_length) <= signed(op1) mod signed(op2);
 											calc(word_length-1 downto 0) <= signed(op1) / signed(op2);
-											set_cc(calc,cci);
+											set_cc(calc,cc);
 		when alu_or 	=> 	calc(word_length-1 downto 0) <= signed(op1 or op2);
-											set_cc(calc,cci);
+											set_cc(calc,cc);
 		when alu_and 	=> 	calc(word_length-1 downto 0) <= signed(op1 and op2);
-											set_cc(calc,cci);
+											set_cc(calc,cc);
 		when alu_lt		=> 	if(signed(op1) < signed(op2)) then
 												calc <= to_signed(1, word_length*2);
 												cc_v <= '1';
@@ -138,13 +143,15 @@ begin
 		end case;
 		wait until rising_edge(clk); -- to make sure outputs are stable?
 		readyi <= '1';
+	else
+		readyi <= '0';
 	end if;
 	end process;
 
 	result 		<= std_logic_vector(calc);
 --		op1i			<= op1;
 --		op2i 			<= op2;
-	cc 			<= cci;
+	--cc 			<= cci;
 	ready			<=  readyi;
 end alu;
   

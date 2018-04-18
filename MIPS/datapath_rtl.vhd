@@ -212,7 +212,7 @@ begin
     if(control(pcincr) = '1') then
       pc <= std_logic_vector(unsigned(pc) + 4);
     elsif(control(pcimm) = '1') then
-      regresult(31 downto 18) := (others => '0');
+      regresult(31 downto 18) := (others => imm(15)); -- sign extend
       regresult(17 downto 2) := imm;
       regresult(1 downto 0) := (others => '0');
 

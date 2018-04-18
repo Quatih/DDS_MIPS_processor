@@ -84,15 +84,15 @@ begin
 						control <= (rwrite => '1', rspreg => '1', lohisel =>'0', others => '0');
 						wait until rising_edge(clk);
 					when mult =>  
-						control <= (alusrc => '1', rread => '1', others => '0');
+						control <= (rread => '1', others => '0');
 						wait until rising_edge(clk);
 						send_alu(alu_mult);
 						control <= (wspreg => '1', others => '0');
 						wait until rising_edge(clk);
 					when div  =>  
-						control <= (alusrc => '1', rread => '1', others => '0');
+						control <= (rread => '1', others => '0');
 						wait until rising_edge(clk);
-						send_alu(alu_mult);
+						send_alu(alu_div);
 						control <= (wspreg => '1', others => '0');
 						wait until rising_edge(clk);
 					when orop =>  
@@ -109,6 +109,7 @@ begin
 							note;
 						else
 							control <= (rdest => '1', rwrite => '1', others => '0'); --move from alu to rdst
+							wait until rising_edge(clk);
 						end if;
 					when subop=>  
 						control <= (rread => '1', others => '0'); -- move to alu inputs, 

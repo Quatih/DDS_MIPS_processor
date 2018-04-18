@@ -51,13 +51,14 @@ begin
 
 		procedure wait_dp is
 		begin
-			loop
+			loop 
 				wait until rising_edge(clk);
-				if ready = '1' then
+				control <= (others => '0');
+				if reset = '1' then 
 					exit;
 				end if;
-				exit when reset = '1';
-			end loop;	
+				exit when ready = '1';
+			end loop;
 		end procedure;
 	begin
 		if reset = '1' then
@@ -71,14 +72,7 @@ begin
 			end loop;
 		elsif(rising_edge(clk)) then
 			control <= (mread => '1', pcincr => '1', others => '0'); 
-			loop 
-				wait until rising_edge(clk);
-				control <= (others => '0');
-				if reset = '1' then 
-					exit;
-				end if;
-				exit when ready = '1';
-			end loop;
+			wait_dp;
 			case opc is --decode instruction 
 				when "000000"=> -- rtype instruction
 				case rtopc is 

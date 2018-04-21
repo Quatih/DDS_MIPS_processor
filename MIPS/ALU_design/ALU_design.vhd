@@ -28,13 +28,13 @@ architecture alu of alu_design is
 
 
 	procedure mult_booth(	op1, op2 	: in std_logic_vector;
-											 	signal result : out signed(word_length*2 -1 downto 0)) is
-		variable mult1, mult2, minus_multi : signed (word_length-1 downto 0);
-		variable prod_sft_add : std_logic_vector(word_length*2 downto 0);
-		constant ub : natural := word_length*2; -- upper bound
-		constant lb : natural := word_length+1; -- lower bound
-	begin
-	  
+		signal result : out std_logic_vector(63 downto 0)) is
+		variable mult1, mult2, minus_multi : signed (32-1 downto 0);
+		variable prod_sft_add : std_logic_vector(32*2 downto 0);
+		constant ub : natural := 32*2; -- upper bound
+		constant lb : natural := 32+1; -- lower bound
+		constant word_length : integer :=32;
+		begin
 		mult1 := signed(op1);
 		mult2 := signed(op2);
 		prod_sft_add(ub downto lb) := (others => '0');
@@ -42,20 +42,20 @@ architecture alu of alu_design is
 		prod_sft_add(0) := '0';
 		minus_multi := signed(op2 );
 		for i in 0 to word_length-1 loop
-			
+
 			case prod_sft_add(1 downto 0) is
-			when "00"|"11" => 
-									prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
-			when "01"      => 
-									prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
-									prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
-			when "10"      => 
-									prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
-									prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
-			when others => prod_sft_add := prod_sft_add; 
+				when "00"|"11" => 
+					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				when "01"      => 
+					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
+					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				when "10"      => 
+					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
+					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				when others => prod_sft_add := prod_sft_add; 
 			end case;
 		end loop;
-		result <= signed(prod_sft_add(ub downto 1)); -- result is where??
+		result <= std_logic_vector(signed(prod_sft_add(ub downto 1))); 
 	end mult_booth;
 
 	procedure division( op1, op2 	: in std_logic_vector(31 downto 0);

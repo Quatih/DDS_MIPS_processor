@@ -1,5 +1,5 @@
 
-architecture behaviour of tb_dpc is
+architecture structure of tb_dpc is
 component controller is
 	generic (word_length : natural);
 	port (
@@ -92,4 +92,4 @@ alu:alu_design
   port map(alu_result, alu_ready, cc, clk, alu_start, reset, alu_ctrl, alu_op1, alu_op2);
 reset <= '1', '0' after 100 ns;
 clk   <= not clk after 10 ns;
-end behaviour;
+end structure;

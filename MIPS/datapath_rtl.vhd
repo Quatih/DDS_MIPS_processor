@@ -3,7 +3,7 @@
 architecture rtl of datapath is
   constant zero       : word := (others=>'0');
   constant dontcare   : word := (others=>'-'); 
-  type states is (s_exec, s_readmemreg, s_readmempc, s_readstart, s_writemem, s_writestart);
+  type states is (s_exec, s_readmemreg, s_readmempc, s_readstartpc, s_readstartreg, s_writemem, s_writestart);
   signal state : states;
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
@@ -21,8 +21,9 @@ architecture rtl of datapath is
     alias rtype : op_code is instruction(5 downto 0);
   signal control : control_bus;
   alias aluword : word is alu_result(word_length -1 downto 0);
+  signal pc_i : word;
+  signal ready_i : std_ulogic;
   signal op1, op2 : word;
-
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
     variable ret : word;
@@ -75,19 +76,12 @@ architecture rtl of datapath is
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  ready <=  '1' when state = s_exec else 
-            '0';
+  ready <=  ready_i;
 
-  alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
-              dontcare;
-  alu_op2 <=  read_reg(rt, regfile) when control(rread) = '1' else
-              sign_extend(imm)  when control(rread) = '1' and control(alusrc) = '1' else
-              load_upper(imm)   when control(rread) = '1' and control(alusrc) = '1' and control(immsl) = '1' else 
-              dontcare; -- or alu_op2?
+  pc <= pc_i;
 
-  opc <= instruction(31 downto 26);
-  rtopc <= instruction(5 downto 0);
-
+  alu_op1 <= op1;
+  alu_op2 <= op2;
 process 
 begin
   wait until clk = '1';
@@ -99,78 +93,118 @@ begin
     mem_bus_out <= dontcare;
     opc <= (others => '-');
     rtopc <= (others => '-');
-    pc <= std_logic_vector(to_unsigned(text_base_address, word_length));
     instruction <= zero;
     regfile <= (others => (others => '0'));
     spec_reg <= (others => '0');
     state <= s_exec;
+    pc_i <= std_logic_vector(to_unsigned(text_base_address, word_length));
   else
-    if control(mread) = '1' then
-      state <= s_readstart;
-    elsif control(mwrite) = '1' then
-      state <= s_writestart;
+    if control(mread) = '1' and state = s_exec then
+      if mem_ready = '0' then
+        if control(msrc) = '1' then -- addr from alu
+          mem_addr <= aluword;
+          mem_read <= '1';
+          state <= s_readmemreg;
+        else -- addr from pc
+          mem_addr <= pc;
+          mem_read <= '1';
+          pc_i <= std_logic_vector(unsigned(pc) + 4);
+          state <= s_readmempc;
+        end if;
+      elsif control(msrc) = '1' then
+        state <= s_readstartreg;
+      else
+        state <= s_readstartpc;
+      end if;
+    elsif control(mwrite) = '1' and state = s_exec then
+      if mem_ready = '0' then
+        mem_addr <= aluword;
+        mem_bus_out <= read_reg(rt, regfile);
+        mem_write <= '1';
+        state <= s_writemem;
+      else
+        state <= s_writestart;
+      end if;
     end if;
-    if control(pcincr) = '1' then         
-      pc <= std_logic_vector(unsigned(pc) + 4);
-    elsif control(pcimm) = '1' then
-      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
-    end if;
+      
     case state is
       when s_readmemreg =>
-        if(mem_ready = '1') then
-          write_reg(rd, regfile, mem_bus_in);
+        if mem_ready = '1' then
+          write_reg(rt, regfile, mem_bus_in);
           mem_read <= '0'; 
           mem_addr <= dontcare;
+          ready_i <= '1';
+          state <= s_exec;
         end if;
       when s_readmempc =>
-        if(mem_ready = '1') then
+        if mem_ready = '1' then
           instruction <= mem_bus_in;
           mem_read <= '0'; 
           mem_addr <= dontcare;
+          opc <= mem_bus_in(31 downto 26);
+          rtopc <= mem_bus_in(5 downto 0);    
+          
+          ready_i <= '1';   
           state <= s_exec;
         end if;
-      when s_readstart =>
-        if(mem_ready = '0') then
-          if control(msrc) = '1' then -- addr from alu
-            mem_addr <= aluword;
-            mem_read <= '1';
-            state <= s_readmemreg;
-          else -- addr from pc
-            mem_addr <= pc;
-            mem_read <= '1';
-            state <= s_readmempc;
-          end if;
+      when s_readstartpc =>
+        if mem_ready = '0' then
+          mem_addr <= pc;
+          mem_read <= '1';
+          pc_i <= std_logic_vector(unsigned(pc) + 4);
+          state <= s_readmempc;
+        end if;
+      when s_readstartreg =>
+        if mem_ready = '0' then
+          mem_addr <= aluword;
+          mem_read <= '1';
+          state <= s_readmemreg;
         end if;
       when s_writestart =>
-        if(mem_ready = '0') then
-            mem_addr <= read_reg(rt, regfile);
-            mem_write <= '1';
-            state <= s_writemem;
+        if mem_ready = '0' then
+          mem_addr <= read_reg(rd, regfile);
+          mem_write <= '1';
+          state <= s_writemem;
         end if;
       when s_writemem =>
         if(mem_ready = '1') then
           mem_write <= '0'; 
           mem_addr <= dontcare;
           state <= s_exec;
+          ready_i <= '1';
         end if;
       when s_exec => --anything other than memory
-
-      if control(rwrite) = '1' then
-        if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
-          if control(lohisel) = '1' then --hi
-            write_reg(rd, regfile, hi);
-          else --lo
-            write_reg(rd, regfile, lo);
+        if control(rread) = '1' then
+          op1 <=  read_reg(rs, regfile);
+          if control(alusrc) = '1' then
+            if(control(immsl) = '1') then
+              op2 <= load_upper(imm);
+            else
+              op2 <= sign_extend(imm);
+            end if;
+          else
+            op2 <= read_reg(rt, regfile);
           end if;
-        elsif(control(rdest) = '1') then --write to rd, all rtype instr 
-          write_reg(rd, regfile, aluword);
-        else
-          write_reg(rt, regfile, aluword);
         end if;
-      elsif control(wspreg) = '1' then
-        spec_reg <= alu_result;
-        -- or add if(lohisel)
-      end if;
+       if control(rwrite) = '1' then
+          if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
+            if control(lohisel) = '1' then --hi
+              write_reg(rd, regfile, hi);
+            else --lo
+              write_reg(rd, regfile, lo);
+            end if;
+          elsif(control(rdest) = '1') then --write to rd, all rtype instr 
+            write_reg(rd, regfile, aluword);
+          else
+            write_reg(rt, regfile, aluword);
+          end if;
+        elsif control(wspreg) = '1' then
+          spec_reg <= alu_result;
+          -- or add if(lohisel)
+        elsif control(pcimm) = '1' then
+          pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+        end if;
+        ready_i <= '0';
       when others => --'no other states'
     end case;
   end if;

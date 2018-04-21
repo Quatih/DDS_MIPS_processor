@@ -34,7 +34,7 @@ begin
 		begin
 			loop 
 				wait until rising_edge(clk);
-				control <= (others => '0');
+				-- control <= (others => '0');
 				if reset = '1' then 
 					exit;
 				end if;

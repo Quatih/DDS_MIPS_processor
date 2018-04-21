@@ -5,6 +5,8 @@ architecture rtl of datapath is
   constant dontcare   : word := (others=>'-'); 
   type states is (s_exec, s_readmemreg, s_readmempc, s_readstartpc, s_readstartreg, s_writemem, s_writestart);
   signal state : states;
+  type mstates is (mem, exec);
+  signal mstate : mstates;
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
@@ -72,13 +74,12 @@ architecture rtl of datapath is
       ret(1 downto 0) := (others => '0');
     return ret;
   end seshift;
-
+  
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  ready <=  '1' when (state = s_readstartpc or state = s_readmempc or
-                      state = s_readstartreg or state = s_readmemreg or
-                      state = s_writemem) and mem_ready = '1' 
+  -- ready <= ready_i;
+  ready <= '1' when (control(mread) = '1' or control(mwrite) = '1') and mem_ready = '1' and not(mstate = mem)
             else '0';
 
   mem_addr <= pc      when state = s_readstartpc or state = s_readmempc else        
@@ -100,8 +101,9 @@ begin
   pc <= pc_i;
 
   instruction <= instruction_i;
-  instruction_i <= mem_bus_in when state = s_readmempc and mem_ready = '1' else
-  instruction_i;
+
+  instruction_i <=  mem_bus_in when state = s_readmempc and mem_ready = '1' else
+                    instruction_i;
 
   -- state <=  s_readmemreg when (state = s_exec or state = s_readstartreg) and control(mread) = '1' and control(msrc) = '1' and mem_ready = '0' else 
   --           s_readmempc when (state = s_exec or state = s_readstartpc) and control(mread) = '1' and mem_ready = '0' else
@@ -142,7 +144,14 @@ begin
         state <= s_writestart;
       end if;
     end if;
-      
+    if mstate = mem and (control(mread) = '1' or control(mwrite) = '1')  then
+      mstate <= exec;
+    elsif (control(mread) = '1' or control(mwrite) = '1') then
+      mstate <= mem;
+    else
+      mstate <= exec;
+    end if;
+
     case state is
       when s_readmemreg =>
         if mem_ready = '1' then

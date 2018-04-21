@@ -123,25 +123,25 @@ begin
     state <= s_exec;
     pc_i <= std_logic_vector(to_unsigned(text_base_address, word_length));
   else
-    -- if control(mread) = '1' and state = s_exec then
-    --   if mem_ready = '0' then
-    --     if control(msrc) = '1' then -- addr from alu
-    --       state <= s_readmemreg;
-    --     else -- addr from pc
-    --       state <= s_readmempc;
-    --     end if;
-    --   elsif control(msrc) = '1' then
-    --     state <= s_readstartreg;
-    --   else
-    --     state <= s_readstartpc;
-    --   end if;
-    -- elsif control(mwrite) = '1' and state = s_exec then
-    --   if mem_ready = '0' then
-    --     state <= s_writemem;
-    --   else
-    --     state <= s_writestart;
-    --   end if;
-    -- end if;
+    if control(mread) = '1' and state = s_exec then
+      if mem_ready = '0' then
+        if control(msrc) = '1' then -- addr from alu
+          state <= s_readmemreg;
+        else -- addr from pc
+          state <= s_readmempc;
+        end if;
+      elsif control(msrc) = '1' then
+        state <= s_readstartreg;
+      else
+        state <= s_readstartpc;
+      end if;
+    elsif control(mwrite) = '1' and state = s_exec then
+      if mem_ready = '0' then
+        state <= s_writemem;
+      else
+        state <= s_writestart;
+      end if;
+    end if;
       
     case state is
       when s_readmemreg =>

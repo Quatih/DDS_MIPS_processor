@@ -34,7 +34,7 @@ architecture alu of alu_design is
 		constant ub : natural := 32*2; -- upper bound
 		constant lb : natural := 32+1; -- lower bound
 		constant word_length : integer :=32;
-		begin
+	begin
 		mult1 := signed(op1);
 		mult2 := signed(op2);
 		prod_sft_add(ub downto lb) := (others => '0');

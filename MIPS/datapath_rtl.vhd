@@ -165,11 +165,22 @@ begin
       op2 <= (others => '0');
       regfile <= (others => (others => '0'));
       spec_reg <= (others => '0');
-	 else
+      loop
+				wait until rising_edge(clk);
+				exit when reset = '0';
+			end loop;
+    end if;
     wait until rising_edge(clk);
     ready_i <= '0';
-	 if(not(unsigned(ctrl_std) = to_unsigned(0, ctrl_std'length))) then
- 
+    loop
+      if(unsigned(ctrl_std) = to_unsigned(0, ctrl_std'length)) then
+        wait until rising_edge(clk);
+      else
+        exit;
+      end if;
+      exit when reset = '1';
+    end loop;
+    
     if(control(pcincr) = '1') then
       pc <= std_logic_vector(unsigned(pc) + 4);
     elsif(control(pcimm) = '1') then
@@ -228,8 +239,7 @@ begin
       memory_write(std_logic_vector(unsigned(aluword)),regresult); 
       ready_i <= '1'; -- ready used for memread and write ops
     end if;
-	 end if;
-    end if;
+    
   end process;
 
 end rtl;

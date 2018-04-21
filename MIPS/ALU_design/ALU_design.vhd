@@ -61,8 +61,8 @@ architecture alu of alu_design is
 		result <= signed(prod_sft_add(ub downto 1)); -- result is where??
 	end mult_booth;
 
-	procedure division( op1, op2 	: in std_logic_vector;
-	signal result : out signed(word_length*2 -1 downto 0)) is
+	procedure division( op1, op2 	: in std_logic_vector(31 downto 0);
+	signal result : out std_logic_vector(64-1 downto 0)) is
 
 		Variable q         : std_logic_vector(31 downto 0);
 		Variable m         : std_logic_vector(32 downto 0);
@@ -80,8 +80,6 @@ architecture alu of alu_design is
 	begin
 		y:= to_integer(op1);
 		z:= to_integer(op2);
-		  
-			  
 		j := std_logic_vector(to_unsigned(y, j'length));        					
 		k := std_logic_vector(to_unsigned(z, k'length));       						   
 		q := j;
@@ -138,10 +136,9 @@ architecture alu of alu_design is
 		end if;  
 		
 		---Final result stored in result(63 downto 0) 
-		result(63 downto 32) <= remin;
-		result(31 downto 0) <= Quo;
+		result(63 downto 32) <= (remin);
+		result(31 downto 0)  <= (Quo);
 		wait;
-
 	end procedure;		
 
 

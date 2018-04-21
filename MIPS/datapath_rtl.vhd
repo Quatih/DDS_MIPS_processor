@@ -3,6 +3,7 @@
 architecture rtl of datapath is
   constant zero       : word := (others=>'0');
   constant dontcare   : word := (others=>'-'); 
+  
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
@@ -55,6 +56,7 @@ begin
 
 process 
 begin
+  wait until clk = '1'
 end process;
 end rtl;
 

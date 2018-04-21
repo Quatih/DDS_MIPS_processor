@@ -1,6 +1,6 @@
 
 
-architecture rtl of datapath is
+architecture behaviour of datapath is
   constant zero       : word := (others=>'0');
   constant dontcare   : word := (others=>'-'); 
   type register_file is array (0 to 31) 
@@ -232,5 +232,5 @@ begin
     end if;
   end process;
 
-end rtl;
+end behaviour;
 

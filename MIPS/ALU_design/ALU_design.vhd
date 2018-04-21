@@ -125,11 +125,11 @@ architecture alu of alu_design is
 			if(z<0) then
 				Quo := Quo_inter;
 			else 
-				Quo := std_logic_vector(unsigned((not Quo_inter) + 1));
+				Quo := std_logic_vector(unsigned((not Quo_inter)) + 1);
 			end if;
 		else
 			if(z<0) then
-			Quo := std_logic_vector(unsigned((not Quo_inter) + 1));
+			Quo := std_logic_vector(unsigned((not Quo_inter)) + 1);
 			else
 				Quo := Quo_inter;
 			end if;

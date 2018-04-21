@@ -29,8 +29,8 @@ END component;
 					  ALU:ALU_design
 							PORT MAP(result,ready,cc,clk,start,reset,inst,op1,op2);
 						inst <= "001" , "000" After 1000 ns;	  
-						op1 <= x"0001_500A", x"00000003" AFTER 1000 ns;
-						op2 <= x"0001_500A", x"00000004" AFTER 1000 ns;  
+						op1 <= x"0000_500A", x"00000003" AFTER 1000 ns;
+						op2 <= x"0000_500A", x"00000004" AFTER 1000 ns;  
 					  reset <= '1', '0' AFTER 100 ns;
 					  clk   <= NOT clk AFTER 10 ns;
 					  start <= '1', '0' After 500 ns;

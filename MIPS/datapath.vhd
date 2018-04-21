@@ -6,7 +6,7 @@ use work.memory_config.all;
 use work.control_names.all;
 --use work.memory_access.all;
 entity datapath is
-  generic (word_length : natural);
+  generic (word_length : natural := 32);
   port (
     clk         : in  std_ulogic;
     reset       : in  std_ulogic;

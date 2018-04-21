@@ -46,10 +46,11 @@ begin
 			alu_start <= '0';
 			cc_reg <= (others => '0');
 			loop
-				wait until clk = '1';
+				wait until rising_edge(clk);
 				exit when reset = '0';
 			end loop;
-		elsif(rising_edge(clk)) then
+		end if;
+		if(rising_edge(clk)) then
 			control <= (mread => '1', pcincr => '1', others => '0'); 
 			wait_dp;
 			case opc is --decode instruction 

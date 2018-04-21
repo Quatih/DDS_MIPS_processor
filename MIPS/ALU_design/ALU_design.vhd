@@ -78,8 +78,8 @@ architecture alu of alu_design is
 		Variable Quo       : std_logic_vector(31 downto 0) ;
 				
 	begin
-		y:= to_integer(op1);
-		z:= to_integer(op2);
+		y:= to_integer(signed(op1));
+		z:= to_integer(signed(op2)); 
 		j := std_logic_vector(to_unsigned(y, j'length));        					
 		k := std_logic_vector(to_unsigned(z, k'length));       						   
 		q := j;
@@ -139,6 +139,7 @@ architecture alu of alu_design is
 		result(63 downto 32) <= (remin);
 		result(31 downto 0)  <= (Quo);
 		wait;
+
 	end procedure;		
 
 

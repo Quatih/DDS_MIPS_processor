@@ -78,8 +78,8 @@ architecture alu of alu_design is
 		Variable Quo       : std_logic_vector(31 downto 0) ;
 				
 	begin
-		y:= to_integer(op1);
-		z:= to_integer(op2);
+		y:= to_integer(signed(op1));
+		z:= to_integer(signed(op2));
 		  
 			  
 		j := std_logic_vector(to_unsigned(y, j'length));        					

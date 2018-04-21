@@ -3,8 +3,8 @@
 architecture rtl of datapath is
   constant zero       : word := (others=>'0');
   constant dontcare   : word := (others=>'-'); 
-  type states is (s_readmem, s_readstart, s_writemem, s_writestart, s_exec);
-  variable state : states := s_exec;
+  type states is (s_exec, s_readmemreg, s_readmempc, s_readstart, s_writemem, s_writestart);
+  signal state : states;
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
@@ -75,8 +75,8 @@ architecture rtl of datapath is
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  ready <=  '0' when state = s_memread or state = s_writemem or state = s_readstart or state = s_writestart
-            else '1';
+  ready <=  '1' when state = s_exec else 
+            '0';
 
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
               dontcare;
@@ -84,16 +84,14 @@ begin
               sign_extend(imm)  when control(rread) = '1' and control(alusrc) = '1' else
               load_upper(imm)   when control(rread) = '1' and control(alusrc) = '1' and control(immsl) = '1' else 
               dontcare; -- or alu_op2?
-  pc <= std_logic_vector(unsigned(pc) + 4) when control(pcincr) = '1' else
-        std_logic_vector(signed(pc) + signed(seshift(imm))) when control(pcimm) = '1' else
-        pc;
 
-  state :=  s_readstart when control(mread) = '1' else
-            s_writestart when control(mwrite) = '1' else
-            state;
+  opc <= instruction(31 downto 26);
+  rtopc <= instruction(5 downto 0);
+
 process 
 begin
   wait until clk = '1';
+
   if(reset = '1') then
     mem_read <= '0';
     mem_write <= '0';
@@ -102,30 +100,61 @@ begin
     opc <= (others => '-');
     rtopc <= (others => '-');
     pc <= std_logic_vector(to_unsigned(text_base_address, word_length));
-    instruction <= zero
+    instruction <= zero;
     regfile <= (others => (others => '0'));
     spec_reg <= (others => '0');
-    state := s_exec;
+    state <= s_exec;
   else
+    if control(mread) = '1' then
+      state <= s_readstart;
+    elsif control(mwrite) = '1' then
+      state <= s_writestart;
+    end if;
+    if control(pcincr) = '1' then         
+      pc <= std_logic_vector(unsigned(pc) + 4);
+    elsif control(pcimm) = '1' then
+      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+    end if;
     case state is
-      when s_readmem =>
+      when s_readmemreg =>
+        if(mem_ready = '1') then
+          write_reg(rd, regfile, mem_bus_in);
+          mem_read <= '0'; 
+          mem_addr <= dontcare;
+        end if;
+      when s_readmempc =>
+        if(mem_ready = '1') then
+          instruction <= mem_bus_in;
+          mem_read <= '0'; 
+          mem_addr <= dontcare;
+          state <= s_exec;
+        end if;
       when s_readstart =>
-        if control(msrc) = '1' then -- addr from alu
-          mem_addr <= aluword;
-          mm_read <= '1';
-          memory_read(std_logic_vector(unsigned(aluword)),regresult);
-          write_reg(rt, regfile, regresult);
-        else -- addr from pc
-          memory_read(std_logic_vector(pc), regresult); -- not sure if correct pc is loaded, because signal
-          instruction <= regresult;
-          opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
-          rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
+        if(mem_ready = '0') then
+          if control(msrc) = '1' then -- addr from alu
+            mem_addr <= aluword;
+            mem_read <= '1';
+            state <= s_readmemreg;
+          else -- addr from pc
+            mem_addr <= pc;
+            mem_read <= '1';
+            state <= s_readmempc;
+          end if;
         end if;
       when s_writestart =>
-        
+        if(mem_ready = '0') then
+            mem_addr <= read_reg(rt, regfile);
+            mem_write <= '1';
+            state <= s_writemem;
+        end if;
       when s_writemem =>
-
+        if(mem_ready = '1') then
+          mem_write <= '0'; 
+          mem_addr <= dontcare;
+          state <= s_exec;
+        end if;
       when s_exec => --anything other than memory
+
       if control(rwrite) = '1' then
         if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
           if control(lohisel) = '1' then --hi

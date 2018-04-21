@@ -3,7 +3,8 @@
 architecture rtl of datapath is
   constant zero       : word := (others=>'0');
   constant dontcare   : word := (others=>'-'); 
-  type states is ()
+  type states is (s_readmem, s_readstart, s_writemem, s_writestart, s_exec);
+  variable state : states := s_exec;
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
@@ -19,7 +20,6 @@ architecture rtl of datapath is
     alias imm : std_logic_vector(15 downto 0) is instruction(15 downto 0);
     alias rtype : op_code is instruction(5 downto 0);
   signal control : control_bus;
-  signal ready_i : std_ulogic;
   alias aluword : word is alu_result(word_length -1 downto 0);
   signal op1, op2 : word;
 
@@ -75,7 +75,8 @@ architecture rtl of datapath is
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  ready <= ready_i;
+  ready <=  '0' when state = s_memread or state = s_writemem or state = s_readstart or state = s_writestart
+            else '1';
 
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
               dontcare;
@@ -86,41 +87,63 @@ begin
   pc <= std_logic_vector(unsigned(pc) + 4) when control(pcincr) = '1' else
         std_logic_vector(signed(pc) + signed(seshift(imm))) when control(pcimm) = '1' else
         pc;
-  
+
+  state :=  s_readstart when control(mread) = '1' else
+            s_writestart when control(mwrite) = '1' else
+            state;
 process 
 begin
   wait until clk = '1';
-  if control(rwrite) = '1' then
-    if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
-      if control(lohisel) = '1' then --hi
-        write_reg(rd, regfile, hi);
-      else --lo
-        write_reg(rd, regfile, lo);
+  if(reset = '1') then
+    mem_read <= '0';
+    mem_write <= '0';
+    mem_addr <= dontcare;
+    mem_bus_out <= dontcare;
+    opc <= (others => '-');
+    rtopc <= (others => '-');
+    pc <= std_logic_vector(to_unsigned(text_base_address, word_length));
+    instruction <= zero
+    regfile <= (others => (others => '0'));
+    spec_reg <= (others => '0');
+    state := s_exec;
+  else
+    case state is
+      when s_readmem =>
+      when s_readstart =>
+        if control(msrc) = '1' then -- addr from alu
+          mem_addr <= aluword;
+          mm_read <= '1';
+          memory_read(std_logic_vector(unsigned(aluword)),regresult);
+          write_reg(rt, regfile, regresult);
+        else -- addr from pc
+          memory_read(std_logic_vector(pc), regresult); -- not sure if correct pc is loaded, because signal
+          instruction <= regresult;
+          opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
+          rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
+        end if;
+      when s_writestart =>
+        
+      when s_writemem =>
+
+      when s_exec => --anything other than memory
+      if control(rwrite) = '1' then
+        if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
+          if control(lohisel) = '1' then --hi
+            write_reg(rd, regfile, hi);
+          else --lo
+            write_reg(rd, regfile, lo);
+          end if;
+        elsif(control(rdest) = '1') then --write to rd, all rtype instr 
+          write_reg(rd, regfile, aluword);
+        else
+          write_reg(rt, regfile, aluword);
+        end if;
+      elsif control(wspreg) = '1' then
+        spec_reg <= alu_result;
+        -- or add if(lohisel)
       end if;
-    elsif(control(rdest) = '1') then --write to rd, all rtype instr 
-      write_reg(rd, regfile, aluword);
-    else
-      write_reg(rt, regfile, aluword);
-    end if;
-  elsif control(wspreg) = '1' then
-    spec_reg <= alu_result;
-    -- or add if(lohisel)
-  elsif control(mread) = '1' then --read mem
-    if control(msrc) = '1' then --addr from alu
-      memory_read(std_logic_vector(unsigned(aluword)),regresult);
-      write_reg(rt, regfile, regresult);
-    else -- addr from pc
-      memory_read(std_logic_vector(pc), regresult);-- not sure if correct pc is loaded, because signal
-      instruction <= regresult;
-      opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
-      rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
-    end if;
-    ready_i <= '1';
-  elsif control(mwrite) = '1' then -- write memory
-    read_reg(rt, regfile, regresult);
-    -- unsigned conversion because the output of the alu is signed, and memory addresses are unsigned
-    memory_write(std_logic_vector(unsigned(aluword)),regresult); 
-    ready_i <= '1'; -- ready used for memread and write ops
+      when others => --'no other states'
+    end case;
   end if;
 end process;
 end rtl;

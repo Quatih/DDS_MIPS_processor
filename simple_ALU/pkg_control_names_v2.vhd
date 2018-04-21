@@ -13,31 +13,18 @@
 -- Contents         : control signals used in datapath and controller
 --
 -- Change Log 
---   Author         : Sighvatur I. Gislason
---   Email          : hvatig@gmail.com
---   Date           : 3.4.2018  
---   Changes        : adjust control signals and added alu signals
+--   Author         : 
+--   Email          : 
+--   Date           :  
+--   Changes        :
 --
 
 library ieee;
 use ieee.std_logic_1164.all;
 package control_names is
   type control_signals is
-     (rdest,  --read from rt (0) or rd (1) 
-      msrc,   --addr input to mem, pc(0) or alu(1) 
-      rwrite, --write to a register (1)
-      mwrite, --write to memory (1)
-      mread,  --read from memory (1)
-      wregsrc,--source of register write, alu(0) or mem(1)
-      alusrc, --source of op2 of alu, reg(0) or seimm(1)
-      aludst, --destination of alu, data(0) or lohi (1)
-      spreg,  --read from special registers to rsource
-      lohisel,--lo(0), hi(1) to rsource
-      pcimm   --add to pc from imm(1)
-      );  
-  type alu_signals is
-    (alu_and, alu_or, alu_add, alu_sub, alu_div, alu_mult);
-  type alu_bus is array (alu_signals) of std_logic;
+     (enable_r1,enable_r2,enable_r3,init,shift_add,addition);
+
   -- do not change the following type declaration
   type control_bus is array (control_signals) of std_logic;  
   

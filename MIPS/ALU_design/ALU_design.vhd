@@ -57,6 +57,91 @@ architecture alu of alu_design is
 		end loop;
 		result <= signed(prod_sft_add(ub downto 1)); -- result is where??
 	end mult_booth;
+
+	procedure division( op1, op2 	: in std_logic_vector(31 downto 0);
+	signal result : out std_logic_vector(64-1 downto 0)) is
+
+		Variable q         : std_logic_vector(31 downto 0);
+		Variable m         : std_logic_vector(32 downto 0);
+		Variable a         : std_logic_vector(32 downto 0);
+		variable count     : integer ;
+		constant r_size    : integer := 32;
+		Variable y         : integer;
+		Variable z         : integer;
+		Variable j         : std_logic_vector(31 downto 0);
+		Variable k         : std_logic_vector(31 downto 0);
+		Variable Quo_inter : std_logic_vector(31 downto 0) ;
+		Variable remin     : std_logic_vector(31 downto 0) ;
+		Variable Quo       : std_logic_vector(31 downto 0) ;
+				
+	begin
+		y:= to_integer(signed(op1));
+		z:= to_integer(signed(op2)); 
+		j := std_logic_vector(to_unsigned(y, j'length));        					
+		k := std_logic_vector(to_unsigned(z, k'length));       						   
+		q := j;
+		m := std_logic_vector(resize(signed(k),m'length));
+		a := (others => '0');
+		count := m'length-1;
+
+		---Non-restoring division algorithm
+		for i in 0 to count-1 loop																					
+			if(a(r_size) = '1') then
+				a(r_size downto 0)   := a(r_size-1 downto 0)&q(r_size-1);
+				q(r_size-1 downto 0) := q(r_size-2 downto 0)&'0';
+				a                    := std_logic_vector(signed(a) + signed(m));
+				if(a(r_size) = '0') then
+					q(0) := '1';
+				else
+					q(0) := '0';
+				end if;   
+				count := count-1;
+				else 
+				a(r_size downto 0)   := a(r_size-1 downto 0)&q(r_size-1);
+				q(r_size-1 downto 0) := q(r_size-2 downto 0)&'0';
+				a                    := std_logic_vector(signed(a) - signed(m));
+				if(a(r_size) = '0') then
+					q(0) := '1';
+				else
+					q(0) := '0';
+				end if;   
+				count := count-1;
+			end if;
+		end loop;
+
+		---Reminder and Quotient correction
+		if(a(r_size) = '1') then													
+				a         :=std_logic_vector(signed(a) + signed(m));
+				Quo_inter := q;
+				remin     := a(r_size-1 downto 0);
+		else
+				Quo_inter := q;
+				remin     := a(r_size-1 downto 0);
+		end if;  		
+		if(y<0) then
+			if(z<0) then
+				Quo := Quo_inter;
+			else 
+				Quo := std_logic_vector(unsigned((not Quo_inter)) + 1);
+			end if;
+		else
+			if(z<0) then
+			Quo := std_logic_vector(unsigned((not Quo_inter)) + 1);
+			else
+				Quo := Quo_inter;
+			end if;
+		end if;  
+		
+		---Final result stored in result(63 downto 0) 
+		result(63 downto 32) <= (remin);
+		result(31 downto 0)  <= (Quo);
+		wait;
+
+	end procedure;		
+
+
+
+
 begin
 	seq: process
 		variable lop1, lop2 : signed(word_length*2-1 downto 0) := (others => '0');

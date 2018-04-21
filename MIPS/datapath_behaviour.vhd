@@ -15,7 +15,7 @@ architecture behaviour of datapath is
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
   signal pc  : word; -- unsigned(word_length*2-1 downto 0);
-  signal instruction : word;
+  -- signal instruction : word;
     alias opcode : op_code is instruction(31 downto 26);
     alias rs : reg_code is instruction(25 downto 21);
     alias rt : reg_code is instruction(20 downto 16);
@@ -161,8 +161,9 @@ begin
       mem_write <= '0';
       mem_addr <= (others => '-');
       mem_bus_out <= (others => '0');
-      opc <= (others => '0');
-      rtopc <= (others => '0');
+      instruction <= zero;
+      -- opc <= (others => '0');
+      -- rtopc <= (others => '0');
       pc <= std_logic_vector(to_unsigned(text_base_address, word_length));
       instruction <= (others => '0');
       ready_i <= '0';
@@ -232,8 +233,8 @@ begin
       else -- addr from pc
         memory_read(std_logic_vector(pc), regresult);-- not sure if correct pc is loaded, because signal
         instruction <= regresult;
-        opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
-        rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
+        -- opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
+        -- rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
         pc <= std_logic_vector(unsigned(pc) + 4);
       end if;
       ready_i <= '1';

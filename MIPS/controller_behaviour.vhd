@@ -6,6 +6,8 @@ architecture behaviour of controller is
 	alias cc_z : std_logic IS cc(1); -- zero
 	alias cc_v : std_logic IS cc(0); -- overflow/compare
 	signal control : control_bus;
+	alias rtopc : op_code is instruction(5 downto 0);
+	alias opc : op_code is instruction(31 downto 26);
 begin
 	ctrl_std <= ctlr2std(control);
 

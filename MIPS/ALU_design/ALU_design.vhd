@@ -138,7 +138,6 @@ architecture behaviour of alu_design is
 		---Final result stored in result(63 downto 0) 
 		result(63 downto 32) <= signed(remin);
 		result(31 downto 0)  <= signed(Quo);
-		wait;
 
 	end procedure;		
 

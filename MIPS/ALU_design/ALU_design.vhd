@@ -15,7 +15,7 @@ entity alu_design is
 				);
 end alu_design;
 
-architecture behaviour of alu_design is
+architecture alu of alu_design is
 
 	signal calc 	: signed (2*word_length-1 downto 0);
 	signal cci 		:  cc_type;
@@ -26,121 +26,37 @@ architecture behaviour of alu_design is
 	constant zero : signed(31 downto 0) := (others => '0');
 
 
-	---multiplication
+
+
 	procedure mult_booth(	op1, op2 	: in std_logic_vector;
-		signal result : out std_logic_vector(63 downto 0)) is
-		variable mult1, mult2, minus_multi : signed (32-1 downto 0);
-		variable prod_sft_add : std_logic_vector(32*2 downto 0);
-		constant ub : natural := 32*2; -- upper bound
-		constant lb : natural := 32+1; -- lower bound
-		constant word_length : integer :=32;
-	begin
-		mult1 := signed(op1);
-		mult2 := signed(op2);
-		prod_sft_add(ub downto lb) := (others => '0');
-		prod_sft_add(word_length downto 1) := std_logic_vector(mult1);
-		prod_sft_add(0) := '0';
-		minus_multi := signed(op2 );
-		for i in 0 to word_length-1 loop
-
-			case prod_sft_add(1 downto 0) is
+		signal result : out signed (word_length*2 -1 downto 0)) is
+				variable mult1, mult2, minus_multi : signed (word_length-1 downto 0);
+				variable prod_sft_add : std_logic_vector(word_length*2 downto 0);
+				constant ub : natural := word_length*2; -- upper bound
+				constant lb : natural := word_length+1; -- lower bound
+				begin
+				mult1 := signed(op1);
+				mult2 := signed(op2);
+				prod_sft_add(ub downto lb) := (others => '0');
+				prod_sft_add(word_length downto 1) := std_logic_vector(mult1);
+				prod_sft_add(0) := '0';
+				minus_multi := signed(op2 );
+				for i in 0 to word_length-1 loop
+				wait until falling_edge(clk);
+				case prod_sft_add(1 downto 0) is
 				when "00"|"11" => 
-					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
 				when "01"      => 
-					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
-					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
 				when "10"      => 
-					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
-					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
-				when others => prod_sft_add := prod_sft_add; 
-			end case;
-		end loop;
-		result <= std_logic_vector(signed(prod_sft_add(ub downto 1))); 
+				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				when others => prod_sft_add := (others => '0'); 
+				end case;
+				end loop;
+				result <= signed(std_logic_vector(prod_sft_add(ub downto 1))); -- result is where??
 	end mult_booth;
-
-	procedure division( op1, op2 	: in std_logic_vector(31 downto 0);
-											signal result : out signed(64-1 downto 0)) is
-
-		Variable q         : std_logic_vector(31 downto 0);
-		Variable m         : std_logic_vector(32 downto 0);
-		Variable a         : std_logic_vector(32 downto 0);
-		variable count     : integer ;
-		constant r_size    : integer := 32;
-		Variable y         : integer;
-		Variable z         : integer;
-		Variable j         : std_logic_vector(31 downto 0);
-		Variable k         : std_logic_vector(31 downto 0);
-		Variable Quo_inter : std_logic_vector(31 downto 0) ;
-		Variable remin     : std_logic_vector(31 downto 0) ;
-		Variable Quo       : std_logic_vector(31 downto 0) ;
-				
-	begin
-		y:= to_integer(signed(op1));
-		z:= to_integer(signed(op2)); 
-		j := std_logic_vector(to_unsigned(y, j'length));        					
-		k := std_logic_vector(to_unsigned(z, k'length));       						   
-		q := j;
-		m := std_logic_vector(resize(signed(k),m'length));
-		a := (others => '0');
-		count := m'length-1;
-
-		---Non-restoring division algorithm
-		for i in 0 to count-1 loop																					
-			if(a(r_size) = '1') then
-				a(r_size downto 0)   := a(r_size-1 downto 0)&q(r_size-1);
-				q(r_size-1 downto 0) := q(r_size-2 downto 0)&'0';
-				a                    := std_logic_vector(signed(a) + signed(m));
-				if(a(r_size) = '0') then
-					q(0) := '1';
-				else
-					q(0) := '0';
-				end if;   
-				count := count-1;
-				else 
-				a(r_size downto 0)   := a(r_size-1 downto 0)&q(r_size-1);
-				q(r_size-1 downto 0) := q(r_size-2 downto 0)&'0';
-				a                    := std_logic_vector(signed(a) - signed(m));
-				if(a(r_size) = '0') then
-					q(0) := '1';
-				else
-					q(0) := '0';
-				end if;   
-				count := count-1;
-			end if;
-		end loop;
-
-		---Reminder and Quotient correction
-		if(a(r_size) = '1') then													
-				a         :=std_logic_vector(signed(a) + signed(m));
-				Quo_inter := q;
-				remin     := a(r_size-1 downto 0);
-		else
-				Quo_inter := q;
-				remin     := a(r_size-1 downto 0);
-		end if;  		
-		if(y<0) then
-			if(z<0) then
-				Quo := Quo_inter;
-			else 
-				Quo := std_logic_vector(unsigned((not Quo_inter)) + 1);
-			end if;
-		else
-			if(z<0) then
-			Quo := std_logic_vector(unsigned((not Quo_inter)) + 1);
-			else
-				Quo := Quo_inter;
-			end if;
-		end if;  
-		
-		---Final result stored in result(63 downto 0) 
-		result(63 downto 32) <= signed(remin);
-		result(31 downto 0)  <= signed(Quo);
-
-	end procedure;		
-
-
-
-
 begin
 	seq: process
 		variable lop1, lop2 : signed(word_length*2-1 downto 0) := (others => '0');
@@ -189,20 +105,20 @@ begin
 		lop2(word_length-1 downto 0) := signed(op2);
 		lop2(word_length*2-1 downto word_length) := (others => op2(31));
 		case inst is
-		when alu_add => sresult := to_integer(signed(op1) + signed(op2));
+			when alu_add => sresult := to_integer(signed(op1) + signed(op2));
 											set_cc(sresult,cci);
 											calc <= to_signed(sresult, word_length*2);
 		when alu_mult => 	
-											sresult := to_integer(signed(op1)*signed(op2));
-											set_cc(sresult, cci);
-											calc <= to_signed(sresult, word_length*2);
-											--mult_booth(op1, op2, calc);
+											--sresult := to_integer(signed(op1)*signed(op2));
+											--set_cc(sresult, cci);
+											--calc <= to_signed(sresult, word_length*2);
+											mult_booth(op1, op2, calc);
+											set_cc(to_integer(calc),cci);
 		when alu_sub 	=> 	sresult := to_integer(signed(op1) - signed(op2));
 											calc <= to_signed(sresult, word_length*2);
 											set_cc(sresult,cci);
-		when alu_div =>   division(op1, op2, calc);
-											-- calc(word_length*2-1 downto word_length) <= signed(op1) mod signed(op2);
-											-- calc(word_length-1 downto 0) <= signed(op1) / signed(op2);
+		when alu_div =>   calc(word_length*2-1 downto word_length) <= signed(op1) mod signed(op2);
+											calc(word_length-1 downto 0) <= signed(op1) / signed(op2);
 											set_cc(to_integer(calc),cci);
 		when alu_or 	=> 	calc(word_length-1 downto 0) <= signed(op1 or op2);
 											set_cc(to_integer(calc),cci);
@@ -236,6 +152,5 @@ begin
 --		op2i 			<= op2;
 	cc 			<= cci;
 	ready			<=  readyi;
-end behaviour;
+end alu;
   
-

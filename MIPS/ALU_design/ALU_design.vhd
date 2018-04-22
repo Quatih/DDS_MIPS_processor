@@ -15,7 +15,7 @@ entity alu_design is
 				);
 end alu_design;
 
-architecture behaviour of alu_design is
+architecture alu of alu_design is
 
 	signal calc 	: signed (2*word_length-1 downto 0);
 	signal cci 		:  cc_type;
@@ -26,7 +26,7 @@ architecture behaviour of alu_design is
 	constant zero : signed(31 downto 0) := (others => '0');
 
 
-	---multiplication
+
 	procedure mult_booth(	op1, op2 	: in std_logic_vector;
 		signal result : out std_logic_vector(63 downto 0)) is
 		variable mult1, mult2, minus_multi : signed (32-1 downto 0);
@@ -55,11 +55,11 @@ architecture behaviour of alu_design is
 				when others => prod_sft_add := prod_sft_add; 
 			end case;
 		end loop;
-		result <= std_logic_vector(signed(prod_sft_add(ub downto 1))); 
+		result <= signed(std_logic_vector(prod_sft_add(ub downto 1))); 
 	end mult_booth;
 
 	procedure division( op1, op2 	: in std_logic_vector(31 downto 0);
-											signal result : out signed(64-1 downto 0)) is
+	signal result : out std_logic_vector(64-1 downto 0)) is
 
 		Variable q         : std_logic_vector(31 downto 0);
 		Variable m         : std_logic_vector(32 downto 0);
@@ -133,8 +133,9 @@ architecture behaviour of alu_design is
 		end if;  
 		
 		---Final result stored in result(63 downto 0) 
-		result(63 downto 32) <= signed(remin);
-		result(31 downto 0)  <= signed(Quo);
+		result(63 downto 32) <= (remin);
+		result(31 downto 0)  <= (Quo);
+		wait;
 
 	end procedure;		
 
@@ -200,9 +201,8 @@ begin
 		when alu_sub 	=> 	sresult := to_integer(signed(op1) - signed(op2));
 											calc <= to_signed(sresult, word_length*2);
 											set_cc(sresult,cci);
-		when alu_div =>   division(op1, op2, calc);
-											-- calc(word_length*2-1 downto word_length) <= signed(op1) mod signed(op2);
-											-- calc(word_length-1 downto 0) <= signed(op1) / signed(op2);
+		when alu_div =>   calc(word_length*2-1 downto word_length) <= signed(op1) mod signed(op2);
+											calc(word_length-1 downto 0) <= signed(op1) / signed(op2);
 											set_cc(to_integer(calc),cci);
 		when alu_or 	=> 	calc(word_length-1 downto 0) <= signed(op1 or op2);
 											set_cc(to_integer(calc),cci);
@@ -236,6 +236,6 @@ begin
 --		op2i 			<= op2;
 	cc 			<= cci;
 	ready			<=  readyi;
-end behaviour;
+end alu;
   
 

@@ -26,25 +26,6 @@ architecture alu of alu_design is
 	constant zero : signed(31 downto 0) := (others => '0');
 
 
-<<<<<<< HEAD
-
-	procedure mult_booth(	op1, op2 	: in std_logic_vector;
-		signal result : out std_logic_vector(63 downto 0)) is
-		variable mult1, mult2, minus_multi : signed (32-1 downto 0);
-		variable prod_sft_add : std_logic_vector(32*2 downto 0);
-		constant ub : natural := 32*2; -- upper bound
-		constant lb : natural := 32+1; -- lower bound
-		constant word_length : integer :=32;
-	begin
-		mult1 := signed(op1);
-		mult2 := signed(op2);
-		prod_sft_add(ub downto lb) := (others => '0');
-		prod_sft_add(word_length downto 1) := std_logic_vector(mult1);
-		prod_sft_add(0) := '0';
-		minus_multi := signed(op2 );
-		for i in 0 to word_length-1 loop
-=======
->>>>>>> f8eebf5a6e49668e2e1131230b24b7e5ae2a661e
 
 
 	procedure mult_booth(	op1, op2 	: in std_logic_vector;
@@ -69,17 +50,16 @@ architecture alu of alu_design is
 				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
 				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
 				when "10"      => 
-<<<<<<< HEAD
-					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
-					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
-				when others => prod_sft_add := prod_sft_add; 
-			end case;
-		end loop;
-		result <= signed(std_logic_vector(prod_sft_add(ub downto 1))); 
+				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				when others => prod_sft_add := (others => '0'); 
+				end case;
+				end loop;
+				result <= signed(prod_sft_add(ub downto 1)); -- result is where??
 	end mult_booth;
 
 	procedure division( op1, op2 	: in std_logic_vector(31 downto 0);
-	signal result : out std_logic_vector(64-1 downto 0)) is
+											signal result : out signed(64-1 downto 0)) is
 
 		Variable q         : std_logic_vector(31 downto 0);
 		Variable m         : std_logic_vector(32 downto 0);
@@ -95,8 +75,8 @@ architecture alu of alu_design is
 		Variable Quo       : std_logic_vector(31 downto 0) ;
 				
 	begin
-		y:= to_integer(signed(op1));
-		z:= to_integer(signed(op2)); 
+		y:= to_integer(op1);
+		z:= to_integer(op2); 
 		j := std_logic_vector(to_unsigned(y, j'length));        					
 		k := std_logic_vector(to_unsigned(z, k'length));       						   
 		q := j;
@@ -153,24 +133,14 @@ architecture alu of alu_design is
 		end if;  
 		
 		---Final result stored in result(63 downto 0) 
-		result(63 downto 32) <= (remin);
-		result(31 downto 0)  <= (Quo);
-		wait;
+		result(63 downto 32) <= signed(remin);
+		result(31 downto 0)  <= signed(Quo);
 
-	end procedure;		
-
+	end procedure;
 
 
 
-=======
-				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
-				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
-				when others => prod_sft_add := (others => '0'); 
-				end case;
-				end loop;
-				result <= signed(prod_sft_add(ub downto 1)); -- result is where??
-	end mult_booth;
->>>>>>> f8eebf5a6e49668e2e1131230b24b7e5ae2a661e
+
 begin
 	seq: process
 		variable lop1, lop2 : signed(word_length*2-1 downto 0) := (others => '0');

@@ -60,10 +60,10 @@ begin
 				case rtopc is 
 					when nop  => assert false report "finished calculation" severity failure;
 					when mfhi => 
-						control <= (rwrite => '1', rspreg => '1', lohisel =>'1', others => '0');
+						control <= (rwrite => '1', hireg => '1', others => '0');
 						wait until rising_edge(clk);
 					when mflo => 
-						control <= (rwrite => '1', rspreg => '1', lohisel =>'0', others => '0');
+						control <= (rwrite => '1', loreg => '1', others => '0');
 						wait until rising_edge(clk);
 					when mult =>  
 						control <= (rread => '1', others => '0');

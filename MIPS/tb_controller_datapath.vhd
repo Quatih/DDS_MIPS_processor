@@ -35,7 +35,8 @@ component controller is
       mem_addr    : out word;
       mem_write   : out std_ulogic;
       mem_read    : out std_ulogic;
-      mem_ready   : in  std_ulogic
+      mem_ready   : in  std_ulogic;
+      regwrite    : out word
       );
   end component datapath;
 
@@ -77,7 +78,7 @@ component controller is
   signal alu_ctrl   : alu_instr;
   signal alu_start  : std_ulogic;
   signal cc         : cc_type;
-
+  signal regwrite : word;
 begin
 
 ctrl:controller
@@ -87,7 +88,7 @@ dp:datapath
   generic map (word_length)
   port map(clk, reset, control_bus, ready, instruction, alu_op1, alu_op2, 
           alu_result, mem_out_bus, mem_in_bus, mem_addr, mem_write, mem_read, 
-          mem_ready);
+          mem_ready, regwrite);
 mem:memory
   port map(mem_out_bus, mem_in_bus, mem_addr, clk, mem_write, mem_read, mem_ready);
 alu:alu_design

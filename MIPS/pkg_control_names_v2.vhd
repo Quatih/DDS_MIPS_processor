@@ -34,7 +34,9 @@ package control_names is
     immsl,  --sign extend to wl(0) or sl to wl(1)
     wspreg, --write to special register
     rspreg, --read from special registers to rsource
-    lohisel,--lo(0), hi(1) to rsource
+    loreg,
+    hireg,
+    -- lohisel,--lo(0), hi(1) to rsource
     -- pcincr, --increment the pc
     pcimm   --add to pc from imm(1)
     );  

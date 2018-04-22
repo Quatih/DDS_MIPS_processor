@@ -7,6 +7,7 @@ configuration cnf_dp_controller_behaviour of tb_dpc is
     end for;
     for dp:datapath use entity work.datapath(rtl);
     -- for dp:datapath use entity work.datapath(behaviour);
+    
     end for;
     for mem:memory use entity work.memory(test);
     -- for mem:memory use entity work.memory(behaviour);

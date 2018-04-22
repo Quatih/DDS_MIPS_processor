@@ -10,7 +10,7 @@ architecture rtl of datapath is
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
-  signal spec_reg : std_logic_vector(word_length*2-1 downto 0); --special register with lo, hi
+  signal spec_reg : std_logic_vector(word_length*2-1 downto 0) := (others =>'0'); --special register with lo, hi
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
   signal pc  : word; -- unsigned(word_length*2-1 downto 0);
@@ -78,14 +78,16 @@ architecture rtl of datapath is
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  -- ready <= ready_i;
-  ready <= '1' when (control(mread) = '1' or control(mwrite) = '1') and mem_ready = '1' and not(mstate = mem)
+  ready <=  '1' when (state = s_readstartpc or state = s_readmempc or
+                        state = s_readstartreg or state = s_readmemreg or
+                        state = s_writemem) and mem_ready = '1'
             else '0';
 
   mem_addr <= pc      when state = s_readstartpc or state = s_readmempc else        
               aluword when state = s_readstartreg or state = s_readmemreg else
               read_reg(rd, regfile) when state = s_writestart or state = s_writemem else
               dontcare;
+              
   alu_op1 <= op1;
   alu_op2 <= op2;
 
@@ -98,6 +100,7 @@ begin
 
   mem_bus_out <=  read_reg(rt, regfile) when state = s_writemem or state = s_writestart else
                   dontcare;
+
   pc <= pc_i;
 
   instruction <= instruction_i;

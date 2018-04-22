@@ -23,7 +23,7 @@ component controller is
       clk         : in  std_ulogic;
       reset       : in  std_ulogic;
       ctrl_std    : in  std_logic_vector(0 to control_bus'length-1);
-      -- ready       : out std_logic;
+      ready       : out std_logic;
       instruction : out word;
       -- opc         : out op_code;
       -- rtopc       : out op_code;
@@ -36,7 +36,7 @@ component controller is
       mem_write   : out std_ulogic;
       mem_read    : out std_ulogic;
       mem_ready   : in  std_ulogic;
-      regwrite    : out word
+      regwrite : out word
       );
   end component datapath;
 
@@ -83,10 +83,10 @@ begin
 
 ctrl:controller
   generic map (word_length)
-  port map(clk, reset, control_bus, mem_ready, instruction, cc, alu_ctrl, alu_ready, alu_start);
+  port map(clk, reset, control_bus, ready, instruction, cc, alu_ctrl, alu_ready, alu_start);
 dp:datapath
   generic map (word_length)
-  port map(clk, reset, control_bus, instruction, alu_op1, alu_op2, 
+  port map(clk, reset, control_bus, ready,  instruction, alu_op1, alu_op2, 
           alu_result, mem_out_bus, mem_in_bus, mem_addr, mem_write, mem_read, 
           mem_ready, regwrite);
 mem:memory

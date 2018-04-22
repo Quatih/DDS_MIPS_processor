@@ -18,6 +18,7 @@ end alu_design;
 architecture alu of alu_design is
 
 	signal calc 	: signed (2*word_length-1 downto 0);
+	signal calc_i 	: std_logic_vector (2*word_length-1 downto 0);
 	signal cci 		:  cc_type;
 		alias cc_n 	: std_logic IS cci(2); -- negative
 		alias cc_z 	: std_logic IS cci(1); -- zero
@@ -109,10 +110,11 @@ begin
 											set_cc(sresult,cci);
 											calc <= to_signed(sresult, word_length*2);
 		when alu_mult => 	
-											sresult := to_integer(signed(op1)*signed(op2));
-											set_cc(sresult, cci);
-											calc <= to_signed(sresult, word_length*2);
-											--mult_booth(op1, op2, calc);
+											--sresult := to_integer(signed(op1)*signed(op2));
+											--set_cc(sresult, cci);
+											--calc <= to_signed(sresult, word_length*2);
+											mult_booth(op1, op2, calc_i);
+											calc=signed(calc_i)
 		when alu_sub 	=> 	sresult := to_integer(signed(op1) - signed(op2));
 											calc <= to_signed(sresult, word_length*2);
 											set_cc(sresult,cci);

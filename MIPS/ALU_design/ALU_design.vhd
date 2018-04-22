@@ -26,6 +26,7 @@ architecture alu of alu_design is
 	constant zero : signed(31 downto 0) := (others => '0');
 
 
+<<<<<<< HEAD
 
 	procedure mult_booth(	op1, op2 	: in std_logic_vector;
 		signal result : out std_logic_vector(63 downto 0)) is
@@ -42,14 +43,33 @@ architecture alu of alu_design is
 		prod_sft_add(0) := '0';
 		minus_multi := signed(op2 );
 		for i in 0 to word_length-1 loop
+=======
+>>>>>>> f8eebf5a6e49668e2e1131230b24b7e5ae2a661e
 
-			case prod_sft_add(1 downto 0) is
+
+	procedure mult_booth(	op1, op2 	: in std_logic_vector;
+		signal result : out signed (word_length*2 -1 downto 0)) is
+				variable mult1, mult2, minus_multi : signed (word_length-1 downto 0);
+				variable prod_sft_add : std_logic_vector(word_length*2 downto 0);
+				constant ub : natural := word_length*2; -- upper bound
+				constant lb : natural := word_length+1; -- lower bound
+				begin
+				mult1 := signed(op1);
+				mult2 := signed(op2);
+				prod_sft_add(ub downto lb) := (others => '0');
+				prod_sft_add(word_length downto 1) := std_logic_vector(mult1);
+				prod_sft_add(0) := '0';
+				minus_multi := signed(op2 );
+				for i in 0 to word_length-1 loop
+				wait until falling_edge(clk);
+				case prod_sft_add(1 downto 0) is
 				when "00"|"11" => 
-					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
 				when "01"      => 
-					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
-					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) + mult2);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
 				when "10"      => 
+<<<<<<< HEAD
 					prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
 					prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
 				when others => prod_sft_add := prod_sft_add; 
@@ -142,6 +162,15 @@ architecture alu of alu_design is
 
 
 
+=======
+				prod_sft_add(ub downto lb) := std_logic_vector(signed(prod_sft_add(ub downto lb)) - minus_multi);
+				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);
+				when others => prod_sft_add := (others => '0'); 
+				end case;
+				end loop;
+				result <= signed(prod_sft_add(ub downto 1)); -- result is where??
+	end mult_booth;
+>>>>>>> f8eebf5a6e49668e2e1131230b24b7e5ae2a661e
 begin
 	seq: process
 		variable lop1, lop2 : signed(word_length*2-1 downto 0) := (others => '0');
@@ -190,14 +219,15 @@ begin
 		lop2(word_length-1 downto 0) := signed(op2);
 		lop2(word_length*2-1 downto word_length) := (others => op2(31));
 		case inst is
-		when alu_add => sresult := to_integer(signed(op1) + signed(op2));
+			when alu_add => sresult := to_integer(signed(op1) + signed(op2));
 											set_cc(sresult,cci);
 											calc <= to_signed(sresult, word_length*2);
 		when alu_mult => 	
-											sresult := to_integer(signed(op1)*signed(op2));
-											set_cc(sresult, cci);
-											calc <= to_signed(sresult, word_length*2);
-											--mult_booth(op1, op2, calc);
+											--sresult := to_integer(signed(op1)*signed(op2));
+											--set_cc(sresult, cci);
+											--calc <= to_signed(sresult, word_length*2);
+											mult_booth(op1, op2, calc);
+											set_cc(to_integer(calc),cci);
 		when alu_sub 	=> 	sresult := to_integer(signed(op1) - signed(op2));
 											calc <= to_signed(sresult, word_length*2);
 											set_cc(sresult,cci);
@@ -238,4 +268,3 @@ begin
 	ready			<=  readyi;
 end alu;
   
-

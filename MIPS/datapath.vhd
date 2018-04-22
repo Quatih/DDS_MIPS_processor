@@ -10,7 +10,7 @@ entity datapath is
     clk         : in  std_ulogic;
     reset       : in  std_ulogic;
     ctrl_std    : in  std_logic_vector(0 to control_bus'length-1);
-    ready       : out std_logic;
+    -- ready       : out std_logic;
     instruction : out word;
     alu_op1     : out word;
     alu_op2     : out word;

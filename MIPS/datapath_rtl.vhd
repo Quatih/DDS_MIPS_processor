@@ -46,14 +46,12 @@ architecture rtl of datapath is
 
   procedure write_reg(signal destination  : in reg_code;
                       signal regfile      : out register_file;
-                      signal data         : in word;
-                      signal put : out word) is
+                      signal data         : in word) is
   begin
     if((unsigned(destination)) > regfile'high) then
       assert false report "wrong access to register" severity failure;
     else
       regfile(to_integer(unsigned(destination))) <= data;
-      put <= data;
     end if;
   end write_reg;
       
@@ -85,19 +83,17 @@ architecture rtl of datapath is
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  ready <=  ready_i;
-  ready_i <= '1' when mem_ready = '1'
-  else '0';
+  -- ready <=  ready_i;
 
   mem_addr <= unknown when mem_ready = '1' else
               aluword when (control(mread) = '1' and control(msrc) = '1') or control(mwrite) = '1' else
               pc      when control(mread) = '1' else        
               unknown;
               
-  mem_read <= '1' when control(mread) = '1' and mem_ready = '0' and ready_i = '0' 
+  mem_read <= '1' when control(mread) = '1' and mem_ready = '0'
               else '0';
 
-  mem_write <= '1' when control(mwrite) = '1' and mem_ready = '0' and ready_i = '0' 
+  mem_write <= '1' when control(mwrite) = '1' and mem_ready = '0'
                 else '0';
 
   mem_bus_out <= mem_bus_out_i;
@@ -109,10 +105,18 @@ begin
                     instruction_i;
 
   alu_op1 <=  op1;
-
   alu_op2 <=  op2;
+
+  op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
+          dontcare;
+  op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
+          sign_extend(imm) when control(alusrc) = '1' else
+          read_reg(rt, regfile) when control(rread) = '1' else
+          dontcare;
+
+  -- do because of memory access
   savereg <=  mem_bus_in when mem_ready = '1' and control(msrc) = '1' else
-              savereg;
+              savereg; 
 
   spec_reg <= alu_result when control(wspreg) = '1' else
               spec_reg;
@@ -141,7 +145,7 @@ begin
     if mem_ready = '1' then
       -- ready_i <= '1';
       if control(msrc) = '1' then
-        write_reg(rt, regfile, savereg, regwrite);
+        write_reg(rt, regfile, savereg);
       elsif control(mread) = '1' then
         -- instruction_i <=  mem_bus_in;
         pc_i <= std_logic_vector(unsigned(pc) + 4);
@@ -151,26 +155,26 @@ begin
     else
       -- ready_i <= '0';
     end if;
-    if control(rread) = '1' then
-      op1 <= read_reg(rs, regfile);
-      if control(alusrc) = '1' and control(immsl) = '1' then
-        op2 <= load_upper(imm);
-      elsif control(alusrc) = '1' then
-        op2 <= sign_extend(imm);
-      else
-        op2 <= read_reg(rt, regfile);
-      end if;
-    elsif control(mwrite) = '1' then
+    -- if control(rread) = '1' then
+    --   op1 <= read_reg(rs, regfile);
+    --   if control(alusrc) = '1' and control(immsl) = '1' then
+    --     op2 <= load_upper(imm);
+    --   elsif control(alusrc) = '1' then
+    --     op2 <= sign_extend(imm);
+    --   else
+    --     op2 <= read_reg(rt, regfile);
+    --   end if;
+    if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
     elsif control(rwrite) = '1'  then
       if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
-          write_reg(rd, regfile, hi, regwrite);
+          write_reg(rd, regfile, hi);
       elsif control(loreg) = '1' then --lo
-          write_reg(rd, regfile, lo, regwrite);
+          write_reg(rd, regfile, lo);
       elsif control(rdest) = '1'  then --write to rd, all rtype instr 
-        write_reg(rd, regfile, aluword, regwrite);
+        write_reg(rd, regfile, aluword);
       else
-        write_reg(rt, regfile, aluword, regwrite);
+        write_reg(rt, regfile, aluword);
       end if;
     elsif control(pcimm) = '1' then
       pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));

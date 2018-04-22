@@ -4,7 +4,6 @@ use ieee.numeric_std.all;
 use work.processor_types.all;
 use work.memory_config.all;
 use work.control_names.all;
---use work.memory_access.all;
 entity datapath is
   generic (word_length : natural := 32);
   port (
@@ -21,6 +20,7 @@ entity datapath is
     mem_addr    : out word;
     mem_write   : out std_ulogic;
     mem_read    : out std_ulogic;
-    mem_ready   : in  std_ulogic
+    mem_ready   : in  std_ulogic;
+    regwrite    : out word
     );
 end datapath;

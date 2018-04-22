@@ -26,7 +26,7 @@ architecture behaviour of alu_design is
 	constant zero : signed(31 downto 0) := (others => '0');
 
 
-
+	---multiplication
 	procedure mult_booth(	op1, op2 	: in std_logic_vector;
 		signal result : out std_logic_vector(63 downto 0)) is
 		variable mult1, mult2, minus_multi : signed (32-1 downto 0);

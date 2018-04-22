@@ -6,6 +6,8 @@ architecture behaviour of controller is
 	alias cc_z : std_logic IS cc(1); -- zero
 	alias cc_v : std_logic IS cc(0); -- overflow/compare
 	signal control : control_bus;
+	alias rtopc : op_code is instruction(5 downto 0);
+	alias opc : op_code is instruction(31 downto 26);
 begin
 	ctrl_std <= ctlr2std(control);
 
@@ -32,7 +34,7 @@ begin
 		begin
 			loop 
 				wait until rising_edge(clk);
-				control <= (others => '0');
+				-- control <= (others => '0');
 				if reset = '1' then 
 					exit;
 				end if;
@@ -51,7 +53,7 @@ begin
 			end loop;
 		end if;
 		if(rising_edge(clk)) then
-			control <= (mread => '1', pcincr => '1', others => '0'); 
+			control <= (mread => '1', others => '0'); 
 			wait_dp;
 			case opc is --decode instruction 
 				when "000000"=> -- rtype instruction

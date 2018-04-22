@@ -13,7 +13,7 @@ ENTITY memory IS
        );
 END memory;
 
-ARCHITECTURE behaviour OF memory IS
+ARCHITECTURE test OF memory IS
   ALIAS word_address : std_logic_vector(31 DOWNTO 2) IS a_bus(31 DOWNTO 2);
   SIGNAL d_busouti : std_logic_vector(31 DOWNTO 0);
   CONSTANT unknown : std_logic_vector(31 DOWNTO 0) := (OTHERS=>'X');  
@@ -117,4 +117,4 @@ OTHERS => "00000000"
   
   ASSERT (a_bus(1 DOWNTO 0)="00") OR (state=idle) REPORT "memory: not an aligned address" SEVERITY error;   
   
-END behaviour;
+END test;

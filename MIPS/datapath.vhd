@@ -12,8 +12,7 @@ entity datapath is
     reset       : in  std_ulogic;
     ctrl_std    : in  std_logic_vector(0 to control_bus'length-1);
     ready       : out std_logic;
-    opc         : out op_code;
-    rtopc       : out op_code;
+    instruction : out word;
     alu_op1     : out word;
     alu_op2     : out word;
     alu_result  : in  std_logic_vector(word_length*2-1 downto 0);

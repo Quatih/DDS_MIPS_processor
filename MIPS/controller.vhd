@@ -11,8 +11,7 @@ entity controller is
 		reset 		: in	std_ulogic;
 		ctrl_std  : out std_logic_vector(0 to control_bus'length-1);
 		ready			: in 	std_ulogic;
-		opc       : in 	op_code;
-		rtopc     : in 	op_code;
+		instruction: in word;
 		cc 				: in 	cc_type;
 		alu_ctrl 	: out alu_instr;
 		alu_ready : in 	std_ulogic;

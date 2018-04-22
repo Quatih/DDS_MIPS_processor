@@ -221,11 +221,9 @@ architecture behaviour of mips_processor is
             rs_int := to_integer(signed(rs_reg));
             read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
-             wait_clk(clk_count);
+             ---wait_clk(clk_count);
             case rtype is
-              when mult =>
-                mult_booth(rs_int, rt_int, calc); 
-                tmp := std_logic_vector(calc);
+              when mult => 
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
                 hi := tmp(word_length*2-1 downto word_length);
                 lo := tmp(word_length-1 downto 0);
@@ -241,7 +239,7 @@ architecture behaviour of mips_processor is
             read_data(rt, regfile, rt_reg);
             datareg := rs_reg or rt_reg;
             write_data(rd, regfile, datareg);
-           wait_clk(clk_count);
+            wait_clk(clk_count);
           when others =>
             read_data(rs, regfile, rs_reg);
             rs_int := to_integer(signed(rs_reg));
@@ -319,5 +317,9 @@ architecture behaviour of mips_processor is
   end process;
 
 end behaviour;
+
+
+
+
 
 

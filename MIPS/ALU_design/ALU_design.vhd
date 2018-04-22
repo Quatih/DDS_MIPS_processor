@@ -55,7 +55,7 @@ architecture alu of alu_design is
 				when others => prod_sft_add := (others => '0'); 
 				end case;
 				end loop;
-				result <= signed(std_logic_vector(prod_sft_add(ub downto 1))); -- result is where??
+				result <= signed(prod_sft_add(ub downto 1)); -- result is where??
 	end mult_booth;
 begin
 	seq: process

@@ -5,7 +5,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.processor_types.all;
 use work.memory_config.all;
-architecture behaviour of mips_processor is
+architecture behaviour of mips_processor_behave is
   begin
     process
       type register_file is array (0 to 31) 
@@ -223,7 +223,11 @@ architecture behaviour of mips_processor is
             rt_int := to_integer(signed(rt_reg));
              ---wait_clk(clk_count);
             case rtype is
+<<<<<<< HEAD
+              when mult =>
+=======
               when mult => 
+>>>>>>> d93ae355c75200a35cfaee574ca0ee573620fe8b
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
                 hi := tmp(word_length*2-1 downto word_length);
                 lo := tmp(word_length-1 downto 0);
@@ -231,7 +235,10 @@ architecture behaviour of mips_processor is
               when div => 
                 lo := std_logic_vector(to_signed(rs_int/rt_int, word_length));
                 hi := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
+<<<<<<< HEAD
+=======
                 wait_clk(clk_count);
+>>>>>>> d93ae355c75200a35cfaee574ca0ee573620fe8b
               when others => null;
             end case;
           when orop =>

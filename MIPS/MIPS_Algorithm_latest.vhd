@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 use work.processor_types.all;
 use work.memory_config.all;
 architecture behaviour of mips_processor is
+  signal calc : signed (word_length*2 -1 downto 0);
   begin
     process
       type register_file is array (0 to 31) 
@@ -17,7 +18,7 @@ architecture behaviour of mips_processor is
       variable rs_int : integer; -- temp integer representation
       variable rt_int : integer; -- temp integer representation
       variable rs_int_i : std_logic_vector(word_length - 1 downto 0); -- temp integer representation
-      variable rt_int_i : std_logic_vector(word_length -1 downto 0); -- temp integer representation
+      variable rt_int_i : std_logic_vector(word_length -1 downto 0) ; -- temp integer representation
       variable tmp : std_logic_vector(word_length*2-1 downto 0);
       variable data : integer; -- temp integer
       variable datareg : word; -- temp register
@@ -32,7 +33,7 @@ architecture behaviour of mips_processor is
         alias rd : reg_code is current_instr(15 downto 11);
         alias imm : hword is current_instr(15 downto 0);
         alias rtype : op_code is current_instr(5 downto 0);
-      variable calc : signed (word_length*2 -1 downto 0);
+      
       
       procedure set_cc_rd (data : in integer;
                           cc : out cc_type;
@@ -242,13 +243,13 @@ end mult_booth;
           when mult | div => --store in lo, hi
             read_data(rs, regfile, rs_reg);
             rs_int := to_integer(signed(rs_reg));
-            rs_int_i :=std_logic_vector(to_unsigned(rs_int),word_length );
+            rs_int_i :=std_logic_vector(to_signed(rs_int,word_length)) ;
             read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
-            rt_int_i := std_logic_vector(rt_int);
+            rt_int_i := std_logic_vector(to_signed(rt_int,word_length));
             case rtype is
               when mult => 
-                mult_booth(rs_int, rt_int, calc);
+                mult_booth(rs_int_i, rt_int_i, calc);
                 tmp := std_logic_vector(calc);
                 --tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
                 hi := tmp(word_length*2-1 downto word_length);

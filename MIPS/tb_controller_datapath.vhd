@@ -83,7 +83,7 @@ begin
 
 ctrl:controller
   generic map (word_length)
-  port map(clk, reset, control_bus, ready, instruction, cc, alu_ctrl, alu_ready, alu_start);
+  port map(clk, reset, control_bus, mem_ready, instruction, cc, alu_ctrl, alu_ready, alu_start);
 dp:datapath
   generic map (word_length)
   port map(clk, reset, control_bus, ready,  instruction, alu_op1, alu_op2, 

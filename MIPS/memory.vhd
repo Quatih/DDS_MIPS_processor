@@ -13,7 +13,7 @@
 --              <--------> 
 --
 --       +---------------+
---    ---+               +------------- read; note: a_bus must be valid when read is '1'.
+--    ---+       run 0        +------------- read; note: a_bus must be valid when read is '1'.
 --             +----------------+
 --    ---------+                +------ ready
 --

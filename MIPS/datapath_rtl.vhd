@@ -102,8 +102,7 @@ begin
   instruction <= instruction_i;
 
   -- make latch for instruction
-  -- instruction_i <=  mem_bus_in when control(mread) = '1' and control(msrc) = '0' and mem_ready = '1' and ready_i = '0'
-  --                   else instruction_i;
+  -- instruction_i <=  mem_bus_in when control(mread) = '1' and control(msrc) = '0' and mem_ready = '1' and ready_i = '0';
 
   -- alu_op1 <=  op1;
   -- alu_op2 <=  op2;

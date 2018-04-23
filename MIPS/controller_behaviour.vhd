@@ -10,7 +10,7 @@ architecture behaviour of controller is
 	alias opc : op_code is instruction(31 downto 26);
 begin
 	ctrl_std <= ctlr2std(control);
-
+	
 	seq: process 
 	  -- procedure to initiate alu
 		procedure send_alu(alu_code : alu_instr) is

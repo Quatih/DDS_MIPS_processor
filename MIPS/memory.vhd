@@ -1,37 +1,19 @@
--- File memory.vhd
--- A memory model with properties:
--- a) seperate data and text segments
---   A MIPS assembler generates the code for TEXT and DATA segment.
---   VARIABLE prg:text_segment:= <program>
---   VARIABLE data:data_segment:= <data?
---   Check that the text_base_address and data_base_size are correct (package memory_config)
--- b) a handshake protocol is used.
---  
--- read from memory
---
---         data read from memory valid
---              <--------> 
---
---       +---------------+
---    ---+       run 0        +------------- read; note: a_bus must be valid when read is '1'.
---             +----------------+
---    ---------+                +------ ready
---
--- write to memory
---
---  data to be written must be valid
---        <--------------> 
---
---       +---------------+
---    ---+               +------------- write; note: a_bus must be valid when write is '1'.
---             +----------------+
---    ---------+                +------ ready
---
--- c) if during a read/write the address is not in the data or text segment a violation is reported
---
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+USE work.memory_config.ALL;
+ENTITY memory IS
+  PORT(d_busout : OUT std_logic_vector(31 DOWNTO 0);
+       d_busin  : IN  std_logic_vector(31 DOWNTO 0);
+       a_bus    : IN  std_logic_vector(31 DOWNTO 0);
+       clk      : IN  std_ulogic;
+       write    : IN  std_ulogic;
+       read     : IN  std_ulogic;
+       ready    : OUT std_ulogic
+       );
+END memory;
 
-
-ARCHITECTURE behaviour OF memory IS
+ARCHITECTURE test OF memory IS
   ALIAS word_address : std_logic_vector(31 DOWNTO 2) IS a_bus(31 DOWNTO 2);
   SIGNAL d_busouti : std_logic_vector(31 DOWNTO 0);
   CONSTANT unknown : std_logic_vector(31 DOWNTO 0) := (OTHERS=>'X');  
@@ -51,56 +33,42 @@ BEGIN
            (
 -- Code      , -- Basic                     Source
 --           , --
-"04010013", --  bgez $0,19            21   b	ser # branch always to ser; is assembled to: bgez $0, ser
-"34070001", --  ori $7,$0,1           26   xn:	ori $7, $0, 1    # res
-"0005082a", --  slt $1,$0,$5          27   nxt:	ble $5, $0, fexp # if [R5]<=[$0] branch; assembled to slt $1, $0, %5 and beq $1, $0, fexp
-"10200005", --  beq $1,$0,5                
-"00e60018", --  mult $7,$6            28   	mult $7, $6      # LO=res * x
-"00003812", --  mflo $7               29   	mflo $7          # res=res * x
-"200f0001", --  addi $15,$0,1         30   	addi $15, $0, 1
-"00af2822", --  sub $5,$5,$15         31   	sub $5, $5, $15  # n=n-1
-"0401fff9", --  bgez $0,-7            32   	b nxt
-"04010015", --  bgez $0,21            33   fexp:	b fxn
-"34090001", --  ori $9,$0,1           38   f:	ori $9, $0, 1    # res
-"200f0001", --  addi $15,$0,1         39   nfac:	addi $15, $0, 1
-"0008082a", --  slt $1,$0,$8          40   	ble $8, $0, ffac # branch if [$8]<=[$0]; assembled to slt and beq
-"10200005", --  beq $1,$0,5                
-"01280018", --  mult $9,$8            41   	mult $9, $8      # res=res*n
-"00004812", --  mflo $9               42   	mflo $9
-"200f0001", --  addi $15,$0,1         43   	addi $15, $0, 1
-"010f4022", --  sub $8,$8,$15         44   	sub $8, $8, $15  # n=n-1	
-"0401fff8", --  bgez $0,-8            45   	b nfac           
-"04010010", --  bgez $0,16            46   ffac:	b ff
-"3c011001", --  lui $1,4097           50   ser  lw $10, N              # number of terms; assembled in LUI and LW (this depends on location of N)
-"8c2a0000", --  lw $10,0($1)               
-"3c011001", --  lui $1,4097           51     lw $13, X              # value x
-"8c2d0004", --  lw $13,4($1)               
-"340b0001", --  ori $11,$0,1          52   	ori $11, $0, 1    # index
-"340c03e8", --  ori $12,$0,1000       53   	ori $12, $0, 1000 # approximation exp (first term always 1) (multiplied with 1000)
-"016a082a", --  slt $1,$11,$10        57   ntrm:	ble $10, $11, rdy	
-"1020000d", --  beq $1,$0,13               
-"000b2825", --  or $5,$0,$11          58   	or $5, $0, $11    # calculate x^n
-"000d3025", --  or $6,$0,$13          59   	or $6, $0, $13
-"0401ffe2", --  bgez $0,-30           60   	b xn    # branch always to xn; calculate x^n
-"200f03e8", --  addi $15,$0,1000      62   	addi $15, $0, 1000
-"00ef0018", --  mult $7,$15           63   	mult $7, $15      # LO=multiply with 1000
-"00003812", --  mflo $7               64   	mflo $7
-"000b4025", --  or $8,$0,$11          65   	or $8, $0, $11 
-"0401ffe6", --  bgez $0,-26           66   	b f               # branch always to f; calculate n!
-"00e9001a", --  div $7,$9             68   	div  $7, $9       # 1000x2^n/n! in $14
-"00007012", --  mflo $14              69   	mflo $14
-"018e6020", --  add $12,$12,$14       70   	add $12, $12, $14 # sn=s(n-1)+term
-"216b0001", --  addi $11,$11,1        71   	add $11, $11, 1   # i++
-"0401fff1", --  bgez $0,-15           72   	b ntrm  # branch always to ntrm
-
-"3c011001", --  lui $1,4097           74     sw $12,EX # e^x in EX
-"ac2c0008", --  sw $12,8($1)     
-"00000000", --  nop                   73   rdy:	nop          
+"3c011001" , --  lui $1,4097           7            lw $11, Num
+"8c2b0000" , --  lw $11,0($1)               
+"000bb020" , --  add $22,$0,$11        8    
+"340a0001" , --  ori $10,$0,1          11   
+"000a5025" , --  or $10,$0,$10         12   
+"20190002" , --  addi $25,$0,2         15   
+"201a0005" , --  addi $26,$0,5         16   
+"033a0018" , --  mult $25,$26          17   
+"00006012" , --  mflo $12              18   
+"02cc001a" , --  div $22,$12           23   
+"0000a012" , --  mflo $20              24   
+"22b50001" , --  addi $21,$21,1        25   
+"22a90001" , --  addi $9,$21,1         26   
+"20010000" , --  addi $1,$0,0          27   
+"10340005" , --  beq $1,$20,5               
+"0014b020" , --  add $22,$0,$20        28   
+"3c170064" , --  lui $23,100           30   
+"02d7c02a" , --  slt $24,$22,$23       31   
+"20010001" , --  addi $1,$0,1          33   
+"1038fff5" , --  beq $1,$24,-11             
+"016c001a" , --  div $11,$12           39   
+"00006812" , --  mflo $13              40   
+"00007010" , --  mfhi $14              41   
+"01ee7820" , --  add $15,$15,$14       42   
+"000d5820" , --  add $11,$0,$13        43   
+"012a4822" , --  sub $9,$9,$10         44   
+"0521fff9" , --  bgez $9,-7            45   
+"3c011001" , --  lui $1,4097           49   
+"ac2f0000" , --  sw $15,0($1)               
+"00000000" , --  nop                   54  
+               
 OTHERS => "00000000" 
             );
   
     VARIABLE data:data_segment:=
-           ("00000007", "ffffffff", OTHERS=>"00000000");
+           ("0000007b", OTHERS=>"00000000");
   
     VARIABLE address:natural;  
     VARIABLE data_out:std_logic_vector(31 DOWNTO 0);
@@ -149,4 +117,4 @@ OTHERS => "00000000"
   
   ASSERT (a_bus(1 DOWNTO 0)="00") OR (state=idle) REPORT "memory: not an aligned address" SEVERITY error;   
   
-END behaviour;
+END test;

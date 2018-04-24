@@ -37,7 +37,7 @@ package control_names is
     loreg,
     hireg,
     -- lohisel,--lo(0), hi(1) to rsource
-    -- pcincr, --increment the pc
+    pcincr, --increment the pc
     pcimm   --add to pc from imm(1)
     );  
 

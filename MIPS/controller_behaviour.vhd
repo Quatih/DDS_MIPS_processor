@@ -53,7 +53,7 @@ begin
 			end loop;
 		end if;
 		if(rising_edge(clk)) then
-			control <= (mread => '1', others => '0'); 
+			control <= (mread => '1', pcincr => '1', others => '0'); 
 			wait_dp;
 			case opc is --decode instruction 
 				when "000000"=> -- rtype instruction

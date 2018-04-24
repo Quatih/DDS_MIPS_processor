@@ -46,14 +46,13 @@ architecture rtl of datapath is
 
   procedure write_reg(signal destination  : in reg_code;
                       signal regfile      : out register_file;
-                      signal data         : in word;
-                      signal regwrite : out word) is
+                      signal data         : in word) is
   begin
     if((unsigned(destination)) > regfile'high) then
       assert false report "wrong access to register" severity failure;
     else
       regfile(to_integer(unsigned(destination))) <= data;
-      regwrite <= data;
+      -- regwrite <= data;
     end if;
   end write_reg;
       
@@ -82,6 +81,16 @@ architecture rtl of datapath is
     return ret;
   end seshift;
   
+  procedure pc_adj(signal pc : inout word;
+                  control : in control_bus) is
+  begin
+    if control(pcincr) = '1' then
+      pc <= std_logic_vector(signed(pc) + 4);
+    elsif control(pcimm) = '1' then
+      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+    end if;
+  end pc_adj;
+
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
@@ -117,14 +126,15 @@ begin
           dontcare;
 
   -- do because of memory access, makes latch
-  savereg <=  mem_bus_in when mem_ready = '1' else
-              savereg; 
+  savereg <=  mem_bus_in when mem_ready = '1';
 
   -- instruction_i <= savereg when control(rread) = '1' and control(msrc) = '0' else
   --                  instruction_i;
-
-
-    spec_reg <= alu_result when control(wspreg) = '1';
+  -- pc_i <= std_logic_vector(to_unsigned(text_base_address, word_length)) when reset = '1' else
+  --         std_logic_vector(unsigned(pc) + 4) when control(mread) = '1' and mem_ready = '1' else
+  --         std_logic_vector(signed(pc) + signed(seshift(imm))) when control(mread) = '1' and control(msrc) = '1' and mem_ready = '1';
+        
+  spec_reg <= alu_result when control(wspreg) = '1';
 
                       -- or add if(lohisel)
   -- state <=  s_readmemreg when (state = s_exec or state = s_readstartreg) and control(mread) = '1' and control(msrc) = '1' and mem_ready = '0' else 
@@ -134,19 +144,19 @@ begin
   --           s_writemem when (state = s_exec or state = s_writestart) and control(mwrite) = '1' and mem_ready = '0' else
   --           s_writestart when state = s_exec and control(mwrite) = '1' and mem_ready = '1'
   --           else s_exec;
-
+  regwrite <= pc_i;
 process 
 begin
   wait until rising_edge(clk);
 
   if reset = '1'  then
-    regwrite <= zero;
+    -- regwrite <= zero;
     instruction_i <= zero;
     mem_write_i <= '0';
     mem_read_i <= '0';
     ready_i <= '0';
     regfile <= (others => (others => '0'));
-    pc_i <= std_logic_vector(to_unsigned(text_base_address, word_length));
+    pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
   else
 
     if ready_i = '0' then
@@ -154,10 +164,12 @@ begin
         ready_i <= '1';
         mem_read_i <= '0';
         if control(msrc) = '1' then
-          write_reg(rt, regfile, savereg, regwrite);
+          write_reg(rt, regfile, savereg);
         elsif control(mread) = '1' then
           instruction_i <= savereg;
-          pc_i <= std_logic_vector(unsigned(pc) + 4);
+          if control(pcincr) = '1' then
+            -- pc_i <= std_logic_vector(signed(pc) + 4);
+          end if;
         else
           mem_write_i <= '0';
           --it is mwrite, do nothing
@@ -169,9 +181,17 @@ begin
         ready_i <= '0';
       end if;
     else
-      ready_i <= '0';
-    end if;
+      ready_i <= '0';  
 
+    end if;
+    if ready_i = '0' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
+      pc_i <= std_logic_vector(signed(pc) + 4);
+      -- pc_adj(pc_i, control);
+    elsif control(pcimm) = '1' then
+      pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+
+      -- pc_adj(pc_i, control);
+    end if;
     -- if control(rread) = '1' then -- read from registers
     --   op1 <= read_reg(rs, regfile);
     --   if control(alusrc) = '1' and control(immsl) = '1' then
@@ -183,19 +203,20 @@ begin
     --   end if;
     if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
+      -- regwrite <= read_reg(rt, regfile);
     elsif control(rwrite) = '1'  then
       if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
-        write_reg(rd, regfile, hi, regwrite);
+        write_reg(rd, regfile, hi);
       elsif control(loreg) = '1' then --lo
-        write_reg(rd, regfile, lo, regwrite);
+        write_reg(rd, regfile, lo);
       elsif control(rdest) = '1'  then --write to rd, all rtype instr 
-        write_reg(rd, regfile, aluword, regwrite);
+        write_reg(rd, regfile, aluword);
       else
-        write_reg(rt, regfile, aluword, regwrite);
+        write_reg(rt, regfile, aluword);
       end if;
-    elsif control(pcimm) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
     end if;
+
+
     
   end if;
 end process;

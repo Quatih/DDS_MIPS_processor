@@ -81,6 +81,16 @@ architecture rtl of datapath is
     return ret;
   end seshift;
   
+  procedure pc_adj(signal pc : inout word;
+                  control : in control_bus) is
+  begin
+    if control(pcincr) = '1' then
+      pc <= std_logic_vector(signed(pc) + 4);
+    elsif control(pcimm) = '1' then
+      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+    end if;
+  end pc_adj;
+
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
@@ -158,7 +168,7 @@ begin
         elsif control(mread) = '1' then
           instruction_i <= savereg;
           if control(pcincr) = '1' then
-            pc_i <= std_logic_vector(signed(pc) + 4);
+            -- pc_i <= std_logic_vector(signed(pc) + 4);
           end if;
         else
           mem_write_i <= '0';
@@ -174,7 +184,14 @@ begin
       ready_i <= '0';  
 
     end if;
+    if ready_i = '0' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
+      pc_i <= std_logic_vector(signed(pc) + 4);
+      -- pc_adj(pc_i, control);
+    elsif control(pcimm) = '1' then
+      pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
 
+      -- pc_adj(pc_i, control);
+    end if;
     -- if control(rread) = '1' then -- read from registers
     --   op1 <= read_reg(rs, regfile);
     --   if control(alusrc) = '1' and control(immsl) = '1' then
@@ -198,10 +215,7 @@ begin
         write_reg(rt, regfile, aluword);
       end if;
     end if;
-    if control(pcimm) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
-      -- regwrite <= pc_i;
-    end if;
+
 
     
   end if;

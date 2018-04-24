@@ -436,3 +436,5 @@ architecture behaviour of mips_processor is
   end process;
 
 end behaviour;
+
+

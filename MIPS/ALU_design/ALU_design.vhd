@@ -15,7 +15,7 @@ entity alu_design is
 				);
 end alu_design;
 
-architecture alu of alu_design is
+architecture behaviour of alu_design is
 
 	signal calc 	: signed (2*word_length-1 downto 0);
 	signal cci 		:  cc_type;
@@ -236,5 +236,5 @@ begin
 --		op2i 			<= op2;
 	cc 			<= cci;
 	ready			<=  readyi;
-end alu;
+end behaviour;
   

@@ -31,6 +31,7 @@ architecture rtl of datapath is
   signal mem_bus_out_i : word;
   signal op1, op2 : word;
   signal savereg : word := zero;
+  signal pctemp : word;
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
     variable ret : word;
@@ -105,7 +106,7 @@ begin
   mem_write <= mem_write_i;
 
   mem_bus_out <= mem_bus_out_i;
-  pc <= pc_i ;
+  pc <= pc_i when control(mread) = '1' and mem_ready = '0';
 
   instruction <= instruction_i;
 
@@ -165,6 +166,7 @@ begin
           write_reg(rt, regfile, savereg);
         elsif control(mread) = '1' then
           instruction_i <= savereg;
+          pctemp <= std_logic_vector(signed(pc) + 4);
         else
           --it is mwrite, do nothing
         end if;
@@ -179,8 +181,8 @@ begin
       mem_write_i <= '0';
     end if;
 
-    if ready_i = '0' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + 4);
+    if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
+      pc_i <= pctemp;
       -- pc_adj(pc_i, control);
     elsif control(pcimm) = '1' then
       pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));

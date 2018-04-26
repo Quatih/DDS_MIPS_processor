@@ -32,7 +32,7 @@ architecture behaviour of mips_processor is
         alias rd : reg_code is current_instr(15 downto 11);
         alias imm : hword is current_instr(15 downto 0);
         alias rtype : op_code is current_instr(5 downto 0);
-        Variable clk_count :  integer := 2;
+        Variable clk_count :  integer := 3;
       
       procedure set_cc_rd (data : in integer;
                           cc : out cc_type;
@@ -107,7 +107,7 @@ architecture behaviour of mips_processor is
       end if;
 
       read <= '0'; 
-      memory_location <= (others => '-');
+      memory_location <= (others => 'X');
     end memory_read;                         
 
     procedure memory_write(addr : in natural;
@@ -151,8 +151,8 @@ architecture behaviour of mips_processor is
       end if;
       --
       write <= '0';
-      bus_out <= (others => '-');
-      memory_location <= (others => '-');
+      bus_out <= (others => 'X');
+      memory_location <= (others => 'X');
     end memory_write;
 
     procedure read_data(source          : in reg_code;
@@ -180,7 +180,7 @@ architecture behaviour of mips_processor is
     procedure wait_clk( a     : in integer )is
     begin
       for i in 0 to a loop
-      wait for 20  ns;
+        wait until rising_edge(clk);
     end loop;
     end wait_clk;
    
@@ -221,19 +221,17 @@ architecture behaviour of mips_processor is
             rs_int := to_integer(signed(rs_reg));
             read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
-             ---wait_clk(clk_count);
             case rtype is
               when mult => 
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
                 hi := tmp(word_length*2-1 downto word_length);
                 lo := tmp(word_length-1 downto 0);
-                wait_clk(clk_count);
               when div => 
                 lo := std_logic_vector(to_signed(rs_int/rt_int, word_length));
                 hi := std_logic_vector(to_signed(rs_int mod rt_int, word_length));
-                wait_clk(clk_count);
               when others => null;
             end case;
+            wait_clk(clk_count);
           when orop =>
             read_data(rs, regfile, rs_reg);
             read_data(rt, regfile, rt_reg);
@@ -247,20 +245,18 @@ architecture behaviour of mips_processor is
             rt_int := to_integer(signed(rt_reg));
             case rtype is                                                  
               when add => data := rs_int + rt_int;
-                          wait_clk(clk_count);
               when subop => data := rs_int - rt_int;
-                   wait_clk(clk_count);
               when slt => 
                 if(rs_int < rt_int) then
                     data := 1;
                 else
                     data := 0;
-                end if; 
-                wait_clk(clk_count);       
+                end if;  
               when others => assert false report "illegal r-type instruction" severity warning;
             end case;
             set_cc_rd(data, cc, datareg);
             write_data(rd, regfile, datareg);
+            wait_clk(clk_count);
         end case;
       when sw | beq => --uses rt_int
         read_data(rs, regfile, rs_reg);
@@ -276,8 +272,8 @@ architecture behaviour of mips_processor is
                         data := to_integer(signed(std_logic_vector'(imm & "00"))); -- se and shift
                         pc := pc + data;
                       end if;
-                      wait_clk(clk_count);
           when others => null;
+            wait_clk(clk_count);
         end case;
       when others => -- uses only rs_int
         read_data(rs, regfile, rs_reg);
@@ -293,11 +289,9 @@ architecture behaviour of mips_processor is
                       datareg(15 downto 0) := imm;
                       datareg := rs_reg or datareg;
                       write_data(rt,regfile,datareg);
-                      wait_clk(clk_count);
           when addi =>  data := rs_int + to_integer(signed(imm));
                         set_cc_rd(data, cc, datareg);
                         write_data(rt,regfile,datareg);
-                        wait_clk(clk_count);
           when bgez =>  set_cc_rd(rs_int, cc, datareg);
                         if(rs_int > 0) then
                           cc_v := '1';
@@ -308,10 +302,9 @@ architecture behaviour of mips_processor is
                           data := to_integer(signed(std_logic_vector'(imm & "00")));
                           pc := pc + data;
                         end if;
-                        wait_clk(clk_count);
           when others => assert false report "illegal instruction" severity warning;
         end case;
-
+      wait_clk(clk_count);              
     end case;
     end if;
   end process;

@@ -60,4 +60,6 @@ architecture structure of tb_cmp is
     reset <= '1', '0' after 100 ns;
     clk   <= not clk after 10 ns;
 
+
+  
 end structure;

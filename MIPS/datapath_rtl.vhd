@@ -96,8 +96,7 @@ begin
   -- using control conversion
   ready <=  ready_i;
 
-  mem_addr <= unknown when mem_ready = '1' else
-              aluword when (control(mread) = '1' and control(msrc) = '1') or control(mwrite) = '1' else
+  mem_addr <= aluword when (control(mread) = '1' and control(msrc) = '1') or control(mwrite) = '1' else
               pc      when control(mread) = '1' else        
               unknown;
               
@@ -162,28 +161,24 @@ begin
     if ready_i = '0' then
       if mem_ready = '1' then
         ready_i <= '1';
-        mem_read_i <= '0';
         if control(msrc) = '1' then
           write_reg(rt, regfile, savereg);
         elsif control(mread) = '1' then
           instruction_i <= savereg;
-          if control(pcincr) = '1' then
-            -- pc_i <= std_logic_vector(signed(pc) + 4);
-          end if;
         else
-          mem_write_i <= '0';
           --it is mwrite, do nothing
         end if;
       elsif control(mread) = '1' then
         mem_read_i <= '1';
       elsif control(mwrite) = '1' then
         mem_write_i <= '1';
-        ready_i <= '0';
       end if;
     else
-      ready_i <= '0';  
-
+      ready_i <= '0';
+      mem_read_i <= '0';
+      mem_write_i <= '0';
     end if;
+
     if ready_i = '0' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
       pc_i <= std_logic_vector(signed(pc) + 4);
       -- pc_adj(pc_i, control);

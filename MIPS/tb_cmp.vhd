@@ -61,5 +61,16 @@ architecture structure of tb_cmp is
     clk   <= not clk after 10 ns;
 
 
-  
+  process
+  begin
+    wait until rising_edge(clk);
+    assert data_to_cpu    = cmp_data_to_cpu   report "discrepancy between data from memory" severity note;
+    assert data_from_cpu  = cmp_data_from_cpu report "discrepancy between data to memory" severity note;
+    assert addr           = cmp_addr          report "discrepancy between addr" severity note;
+    assert write          = cmp_write         report "discrepancy between write" severity note;
+    assert read           = cmp_read          report "discrepancy between read" severity note;
+    assert ready          = cmp_ready         report "discrepancy between ready" severity note;
+    
+  end process;
+
 end structure;

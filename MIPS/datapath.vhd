@@ -20,7 +20,6 @@ entity datapath is
     mem_addr    : out word;
     mem_write   : out std_ulogic;
     mem_read    : out std_ulogic;
-    mem_ready   : in  std_ulogic;
-    regwrite : out word
+    mem_ready   : in  std_ulogic
     );
 end datapath;

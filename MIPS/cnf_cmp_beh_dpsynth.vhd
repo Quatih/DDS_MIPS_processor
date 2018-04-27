@@ -1,5 +1,5 @@
 
-configuration cnf_cmp_behaviour of tb_cmp is
+configuration cnf_cmp_beh_dpsynth of tb_cmp is
   for structure
     
     for mem_beh:memory use entity work.memory(test);
@@ -22,4 +22,4 @@ configuration cnf_cmp_behaviour of tb_cmp is
     end for;
 
   end for;
-end cnf_cmp_behaviour;
+end cnf_cmp_beh_dpsynth;

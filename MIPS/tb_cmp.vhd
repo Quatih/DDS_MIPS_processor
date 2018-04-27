@@ -47,16 +47,16 @@ architecture structure of tb_cmp is
 
     proc_beh:mips_processor
     generic map (word_length)
-    port map(data_from_cpu,data_to_cpu,addr,clk,write,read,ready,reset);
+    port map(data_to_cpu,data_from_cpu,addr,clk,write,read,ready,reset);
     mem_beh:memory
-    port map(data_from_cpu,data_to_cpu,addr,clk,write,read,ready);
+    port map(data_to_cpu,data_from_cpu,addr,clk,write,read,ready);
 
 
     proc_cmp:mips_processor
       generic map (word_length)
-      port map(cmp_data_from_cpu,cmp_data_to_cpu,cmp_addr,clk,cmp_write,cmp_read,cmp_ready,reset);
+      port map(cmp_data_to_cpu,cmp_data_from_cpu,cmp_addr,clk,cmp_write,cmp_read,cmp_ready,reset);
     mem_cmp:memory
-      port map(cmp_data_from_cpu,cmp_data_to_cpu,cmp_addr,clk,cmp_write,cmp_read,cmp_ready);
+      port map(cmp_data_to_cpu,cmp_data_from_cpu,cmp_addr,clk,cmp_write,cmp_read,cmp_ready);
     reset <= '1', '0' after 100 ns;
     clk   <= not clk after 10 ns;
 

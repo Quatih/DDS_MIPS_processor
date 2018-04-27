@@ -263,17 +263,20 @@ architecture behaviour of mips_processor is
         rs_int := to_integer(signed(rs_reg));
         read_data(rt, regfile, rt_reg);
         rt_int := to_integer(signed(rt_reg));
+        
         case opcode is
           when sw =>  data := rs_int+to_integer(signed(imm));
+                      wait_clk(1);
                       memory_write(data, rt_reg);
+                      -- wait_clk(1);
           when beq => data := rs_int - rt_int;
                       set_cc_rd(data, cc, datareg);
+                      wait_clk(clk_count);
                       if(cc_z = '1') then
                         data := to_integer(signed(std_logic_vector'(imm & "00"))); -- se and shift
                         pc := pc + data;
                       end if;
           when others => null;
-            wait_clk(clk_count);
         end case;
       when others => -- uses only rs_int
       
@@ -285,7 +288,7 @@ architecture behaviour of mips_processor is
                       wait_clk(2);  
                       memory_read(data, datareg);
                       write_data(rt, regfile, datareg);
-                      wait_clk(1);                    
+                      -- wait_clk(1);                    
           when lui => datareg := (others =>'0');  
                       datareg(word_length-1 downto word_length/2) := imm;
                       write_data(rt, regfile, datareg);

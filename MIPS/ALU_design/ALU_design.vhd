@@ -42,7 +42,7 @@ architecture behaviour of alu_design is
 				prod_sft_add(0) := '0';
 				minus_multi := signed(op2 );
 				for i in 0 to word_length-1 loop
-				wait until falling_edge(clk);
+				-- wait until falling_edge(clk);
 				case prod_sft_add(1 downto 0) is
 				when "00"|"11" => 
 				prod_sft_add := prod_sft_add(ub) & prod_sft_add(ub downto 1);

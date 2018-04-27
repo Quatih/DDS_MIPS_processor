@@ -32,6 +32,7 @@ architecture rtl of datapath is
   signal op1, op2 : word;
   signal savereg : word := zero;
   signal pctemp : word;
+  signal memcheck : std_ulogic := '0';
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
     variable ret : word;
@@ -109,7 +110,7 @@ begin
   pc <= pc_i when control(mread) = '1' and mem_ready = '0';
 
   instruction <= instruction_i;
-
+  memcheck <= '1', '0' after 40 ns when mem_ready = '1';
   -- make latch for instruction
   -- instruction_i <=  mem_bus_in when control(mread) = '1' and control(msrc) = '0' and mem_ready = '1' and ready_i = '0';
 
@@ -157,23 +158,29 @@ begin
     ready_i <= '0';
     regfile <= (others => (others => '0'));
     pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
+    pctemp <= std_logic_vector(to_signed(text_base_address, word_length));
   else
 
     if ready_i = '0' then
       if mem_ready = '1' then
-        ready_i <= '1';
-        if control(msrc) = '1' then
+        if control(msrc) = '1' and memcheck = '1' then
+          ready_i <= '1';
           write_reg(rt, regfile, savereg);
-        elsif control(mread) = '1' then
+        elsif control(mread) = '1' and memcheck = '1' then
+          ready_i <= '1';
           instruction_i <= savereg;
           pctemp <= std_logic_vector(signed(pc) + 4);
+        elsif control(mwrite) = '1' and memcheck = '1' then
+          ready_i <= '1';
         else
-          --it is mwrite, do nothing
+          -- wait on ready from memory
         end if;
       elsif control(mread) = '1' then
         mem_read_i <= '1';
+        mem_write_i <= '0';
       elsif control(mwrite) = '1' then
         mem_write_i <= '1';
+        mem_read_i <= '0';
       end if;
     else
       ready_i <= '0';
@@ -185,7 +192,7 @@ begin
       pc_i <= pctemp;
       -- pc_adj(pc_i, control);
     elsif control(pcimm) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+      pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
 
       -- pc_adj(pc_i, control);
     end if;

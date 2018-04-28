@@ -31,7 +31,7 @@ architecture rtl of datapath is
   signal mem_bus_out_i : word;
   signal op1, op2 : word;
   signal savereg : word := zero;
-  -- signal pctemp : word;
+  signal pctemp : word;
   signal memcheck : std_ulogic := '0';
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
@@ -110,6 +110,7 @@ begin
   pc <= pc_i when control(mread) = '1' and mem_ready = '0';
 
   instruction <= instruction_i;
+  memcheck <= '1', '0' after 40 ns when mem_ready = '1';
   -- make latch for instruction
   -- instruction_i <=  mem_bus_in when control(mread) = '1' and control(msrc) = '0' and mem_ready = '1' and ready_i = '0';
 
@@ -117,12 +118,13 @@ begin
   -- alu_op2 <=  op2;
 
 
+  -- doesn't work ;(
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
-              dontcare;
+          dontcare;
   alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
-              sign_extend(imm) when control(alusrc) = '1' else
-              read_reg(rt, regfile) when control(rread) = '1' else
-              dontcare;
+          sign_extend(imm) when control(alusrc) = '1' else
+          read_reg(rt, regfile) when control(rread) = '1' else
+          dontcare;
 
   -- do because of memory access, makes latch
   savereg <=  mem_bus_in when mem_ready = '1';
@@ -135,39 +137,44 @@ begin
         
   spec_reg <= alu_result when control(wspreg) = '1';
 
+                      -- or add if(lohisel)
+  -- state <=  s_readmemreg when (state = s_exec or state = s_readstartreg) and control(mread) = '1' and control(msrc) = '1' and mem_ready = '0' else 
+  --           s_readmempc when (state = s_exec or state = s_readstartpc) and control(mread) = '1' and mem_ready = '0' else
+  --           s_readstartpc when state = s_exec and control(mread) = '1' and mem_ready = '1' else
+  --           s_readstartreg when state = s_exec and control(mread) = '1' and control(msrc) = '1' and mem_ready = '1' else
+  --           s_writemem when (state = s_exec or state = s_writestart) and control(mwrite) = '1' and mem_ready = '0' else
+  --           s_writestart when state = s_exec and control(mwrite) = '1' and mem_ready = '1'
+  --           else s_exec;
 
 process 
-  variable pctemp : word;
 begin
   wait until rising_edge(clk);
 
   if reset = '1'  then
     -- regwrite <= zero;
+    mem_bus_out_i <= dontcare;
     instruction_i <= zero;
     mem_write_i <= '0';
     mem_read_i <= '0';
     ready_i <= '0';
     regfile <= (others => (others => '0'));
     pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
-    pctemp := std_logic_vector(to_signed(text_base_address, word_length));
+    pctemp <= std_logic_vector(to_signed(text_base_address, word_length));
   else
 
     if ready_i = '0' then
-      if mem_ready = '1' and memcheck = '0' then
-        if control(msrc) = '1' then
+      if mem_ready = '1' then
+        if control(msrc) = '1' and memcheck = '1' then
           ready_i <= '1';
-          memcheck <= '1';
           write_reg(rt, regfile, savereg);
-        elsif control(mread) = '1' then
+        elsif control(mread) = '1' and memcheck = '1' then
           ready_i <= '1';
-          memcheck <= '1';
           instruction_i <= savereg;
-          pctemp := std_logic_vector(signed(pc) + 4);
-        elsif control(mwrite) = '1' then
+          pctemp <= std_logic_vector(signed(pc) + 4);
+        elsif control(mwrite) = '1' and memcheck = '1' then
           ready_i <= '1';
-          memcheck <= '1';
         else
-          -- wait until mem ready = 0
+          -- wait on ready from memory
         end if;
       elsif control(mread) = '1' then
         mem_read_i <= '1';
@@ -176,15 +183,10 @@ begin
         mem_write_i <= '1';
         mem_read_i <= '0';
       end if;
-    elsif mem_ready = '1' and memcheck = '1' then
-      ready_i <= '0';
-      mem_read_i <= '0';
-      mem_write_i <= '0';
     else
       ready_i <= '0';
       mem_read_i <= '0';
       mem_write_i <= '0';
-      memcheck <= '0';
     end if;
 
     if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then

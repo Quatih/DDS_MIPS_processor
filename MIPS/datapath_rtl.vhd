@@ -107,7 +107,6 @@ begin
 
   instruction <= instruction_i;
   memcheck <= '1', '0' after 40 ns when mem_ready = '1';
-
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
           dontcare;
   alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else

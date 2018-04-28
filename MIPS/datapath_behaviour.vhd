@@ -4,10 +4,7 @@ architecture rtl of datapath is
   constant zero     : word := (others=>'0');
   constant dontcare : word := (others=>'-'); 
   constant unknown  : word := (others=>'X');
-  type states is (s_exec, s_readmemreg, s_readmempc, s_readstartpc, s_readstartreg, s_writemem, s_writestart);
-  signal state : states;
-  type mstates is (mem, exec);
-  signal mstate : mstates;
+
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;

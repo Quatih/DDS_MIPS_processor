@@ -12,9 +12,9 @@ vcom controller_behaviour.vhd
 vcom memory.vhd
 vcom ALU_design.vhd
 vcom tb_controller_datapath.vhd
-vcom MIPS_dp_ctrl.vhd
 vcom tb_cmp.vhd
 vcom MIPS_Processor.vhd
+vcom MIPS_dp_ctrl.vhd
 vcom MIPS_Behaviour.vhd
 vcom datapath.vhd
 vcom datapath_rtl.vhd

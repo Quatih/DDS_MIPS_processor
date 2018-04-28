@@ -26,7 +26,7 @@ architecture structure of test_environment is
     port (op1,op2    : in  std_logic_vector(bw-1 downto 0);
           inst,start : in  std_logic;
           reset      : in  std_logic;
-		  clk        : in  std_logic;
+		      clk        : in  std_logic;
           ready      : out std_logic;
           res        : out std_logic_vector(2*bw-1 downto 0)); 
   end component alu;

@@ -23,7 +23,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use work.control_names.all;
 entity controller is
-  generic (bw : natural := 2);
+  generic (bw : natural := 32);
   port (inst     : in  std_logic;
         start    : in  std_logic;
         clk      : in  std_logic;

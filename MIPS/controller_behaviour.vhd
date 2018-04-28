@@ -67,13 +67,11 @@ begin
 						wait until rising_edge(clk);
 					when mult =>  
 						control <= (rread => '1', others => '0');
-						wait until rising_edge(clk);
 						send_alu(alu_mult);
 						control <= (wspreg => '1', others => '0');
 						wait until rising_edge(clk);
 					when div  =>  
 						control <= (rread => '1', others => '0');
-						wait until rising_edge(clk);
 						send_alu(alu_div);
 						control <= (wspreg => '1', others => '0');
 						wait until rising_edge(clk);
@@ -129,16 +127,16 @@ begin
 					cc_reg <= cc;
 					if(cc_z = '1') then 
 						control <= (pcimm => '1', others => '0');
-						wait until rising_edge(clk);
 					end if;
+					wait until rising_edge(clk);
 				when bgez	=>
 					control <= (rread => '1', others => '0'); --calc addr
 					send_alu(alu_gz);
 					cc_reg <= cc;
 					if(cc_v = '1') then
 						control <= (pcimm => '1', others => '0');
-						wait until rising_edge(clk);
 					end if; 
+					wait until rising_edge(clk);
 				when ori	=>
 					control <= (rread => '1', alusrc => '1', others => '0');
 					send_alu(alu_or);

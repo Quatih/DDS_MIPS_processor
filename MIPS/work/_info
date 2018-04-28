@@ -17,7 +17,7 @@ L6
 VEAOHNI_c2hPcBobQc<0Z?2
 Z9 OV;C;10.1d;51
 32
-Z10 !s108 1524921363.707000
+Z10 !s108 1524922274.112000
 Z11 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/ALU_design.vhd|
 Z12 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/ALU_design.vhd|
 Z13 o-work work -2002 -explicit -O0
@@ -62,15 +62,15 @@ FC:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_algo.vhd
 l0
 L2
 V?S3d0P<eJ0bc3OzDb6C8R3
-!s100 >aK]ioZPkIR37TRRzelKX0
 R9
 32
-!i10b 1
-!s108 1524921869.292000
-!s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_algo.vhd|
-!s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_algo.vhd|
 R13
 R14
+!s100 >aK]ioZPkIR37TRRzelKX0
+!i10b 1
+!s108 1524922275.805000
+!s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_algo.vhd|
+!s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_algo.vhd|
 Ccnf_cmp_beh_dprtl
 R16
 R17
@@ -101,7 +101,7 @@ R13
 R14
 !s100 L`8Y`Z?ISI:YLBf3J=_^M1
 !i10b 1
-!s108 1524921366.413000
+!s108 1524922275.936000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_dprtl.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_dprtl.vhd|
 Ccnf_cmp_beh_dpsynth
@@ -128,15 +128,15 @@ FC:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_dpsynth.vhd
 l0
 L2
 VBmXdWT]aTIRE62U65ZYII1
+!s100 CW@I;eaOmO@j9UaK<djC:0
 R9
 32
-R13
-R14
-!s100 CW@I;eaOmO@j9UaK<djC:0
 !i10b 1
-!s108 1524921366.567000
+!s108 1524922276.065000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_dpsynth.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/cnf_cmp_beh_dpsynth.vhd|
+R13
+R14
 Pcontrol_names
 R4
 R5
@@ -150,7 +150,7 @@ VP_HF06flIgW<i6V_5VH0b0
 R9
 32
 b1
-Z31 !s108 1524921362.931000
+Z31 !s108 1524922273.382000
 Z32 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/pkg_control_names_v2.vhd|
 Z33 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/pkg_control_names_v2.vhd|
 R13
@@ -194,7 +194,7 @@ R13
 R14
 !s100 E@?H>THW;5VnO9XA79Qh31
 !i10b 1
-!s108 1524921364.168000
+!s108 1524922274.292000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/controller.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/controller.vhd|
 Abehaviour
@@ -216,9 +216,9 @@ R9
 R13
 R14
 !s100 Ib0AQ^Bho<;3SBW[9ZgGe0
-!i10b 1
-!s108 1524921364.276000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/controller_behaviour.vhd|
+!i10b 1
+!s108 1524922274.413000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/controller_behaviour.vhd|
 Edatapath
 R27
@@ -240,7 +240,7 @@ R13
 R14
 !s100 _0?]b5bU;Nc]cI;X>OBBa1
 !i10b 1
-!s108 1524921364.414000
+!s108 1524922274.566000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/datapath.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/datapath.vhd|
 Artl
@@ -262,9 +262,9 @@ R9
 R13
 R14
 !s100 aAY4f<Nl3@27YUW9G9]ND2
-!i10b 1
-!s108 1524921364.613000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/datapath_rtl.vhd|
+!i10b 1
+!s108 1524922274.670000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/datapath_rtl.vhd|
 Ememory
 Z34 w1524591952
@@ -280,7 +280,7 @@ L37
 V;Z2_G8am0Bn`]j>d@X5ag1
 R9
 32
-Z37 !s108 1524921364.752000
+Z37 !s108 1524922274.818000
 Z38 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/memory.vhd|
 Z39 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/memory.vhd|
 R13
@@ -322,9 +322,9 @@ R9
 R13
 R14
 !s100 N?:L_2]0YYmN>01R@k6Ln1
-!i10b 1
-!s108 1524921363.414000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/test_memory.vhd|
+!i10b 1
+!s108 1524922273.831000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/test_memory.vhd|
 Pmemory_config
 R3
@@ -340,7 +340,7 @@ V69cCAQgim8RHahX;5=4Ok0
 R9
 32
 b1
-Z43 !s108 1524921362.168000
+Z43 !s108 1524922272.988000
 Z44 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/memory_config.vhd|
 Z45 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/memory_config.vhd|
 R13
@@ -385,7 +385,7 @@ R13
 R14
 !s100 DQHW3;z2KI]CQf67bSkXP1
 !i10b 1
-!s108 1524921365.198000
+!s108 1524922274.996000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Processor.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Processor.vhd|
 Amips_dp_ctrl
@@ -406,9 +406,9 @@ R9
 R13
 R14
 !s100 :zn]^gO2zQALg_jFJ9oRO3
-!i10b 1
-!s108 1524921366.261000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_dp_ctrl.vhd|
+!i10b 1
+!s108 1524922275.567000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_dp_ctrl.vhd|
 Abehaviour
 R1
@@ -429,9 +429,9 @@ R9
 R13
 R14
 !s100 1ON9D1ig_:5Je_FPAbdZN2
-!i10b 1
-!s108 1524921366.092000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Behaviour.vhd|
+!i10b 1
+!s108 1524922275.413000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Behaviour.vhd|
 Aalgorithm
 w1524920387
@@ -453,9 +453,9 @@ R9
 R13
 R14
 !s100 IDU[Ve<=[6X`KPGa^zR9h1
-!i10b 1
-!s108 1524921365.934000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Algorithm_latest.vhd|
+!i10b 1
+!s108 1524922275.276000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Algorithm_latest.vhd|
 Pprocessor_types
 R3
@@ -474,7 +474,7 @@ R13
 R14
 !s100 <]<:1gbL6hJNekL7iUR=70
 !i10b 1
-!s108 1524921362.813000
+!s108 1524922273.276000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Processor_types.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/MIPS_Processor_types.vhd|
 Etb_cmp
@@ -493,7 +493,7 @@ L8
 V[0B2h_;=]zM;ocZf5SEo62
 R9
 32
-Z48 !s108 1524921363.081000
+Z48 !s108 1524922273.552000
 Z49 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/tb_cmp.vhd|
 Z50 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/tb_cmp.vhd|
 R13
@@ -540,7 +540,7 @@ R13
 R14
 !s100 ^=Qzo[F]>jcOYXBFY;gSm0
 !i10b 1
-!s108 1524921363.293000
+!s108 1524922273.707000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/tb_dpc.vhd|
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/tb_dpc.vhd|
 Astructure
@@ -562,9 +562,9 @@ R9
 R13
 R14
 !s100 nd3S>=Bz3O]LcQCWe9e1e3
-!i10b 1
-!s108 1524921365.307000
 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/tb_controller_datapath.vhd|
+!i10b 1
+!s108 1524922275.120000
 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/tb_controller_datapath.vhd|
 Etestbench
 Z51 w1524403463
@@ -581,7 +581,7 @@ L5
 VnXmSm@lW<6lm1:GGURFi<1
 R9
 32
-Z54 !s108 1524921363.546000
+Z54 !s108 1524922273.961000
 Z55 !s90 -reportprogress|300|-work|work|-2002|-explicit|C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/testbench.vhd|
 Z56 !s107 C:/Users/Chirag/DDS-Assigment/DDS_MIPS_processor/MIPS/testbench.vhd|
 R13

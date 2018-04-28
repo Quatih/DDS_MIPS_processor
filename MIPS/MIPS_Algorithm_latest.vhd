@@ -5,7 +5,7 @@ use work.processor_types.all;
 use work.memory_config.all;
 use ieee.numeric_std_unsigned.all;
 
-architecture behaviour of mips_processor is
+architecture algorithm of mips_processor is
   signal tmp1 : std_logic_vector(word_length*2-1 downto 0);
   begin
     process

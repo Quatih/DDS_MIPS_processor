@@ -116,7 +116,7 @@ begin
 
   savereg <=  mem_bus_in when mem_ready = '1';
 
-<= alu_result when control(wspreg) = '1';
+  spec_reg <= alu_result when control(wspreg) = '1';
 process 
   variable pctemp : word;
 begin
@@ -141,10 +141,11 @@ begin
         elsif control(mread) = '1' and memcheck = '1' then
           ready_i <= '1';
           instruction_i <= savereg;
-          pctemp := std_logic_vector(signed(pc) + 4);
+          -- pctemp := std_logic_vector(signed(pc) + 4);
         elsif control(mwrite) = '1' and memcheck = '1' then
           ready_i <= '1';
         else
+
           -- wait on ready from memory
         end if;
       elsif control(mread) = '1' then
@@ -161,7 +162,7 @@ begin
     end if;
 
     if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
-      pc_i <= pctemp; -- pctemp used because otherwise it might be incremented twice
+      pc_i <= std_logic_vector(signed(pc) + 4); -- pctemp used because otherwise it might be incremented twice
     elsif control(pcimm) = '1' then
       pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
     end if;

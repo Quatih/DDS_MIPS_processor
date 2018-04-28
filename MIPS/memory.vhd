@@ -13,7 +13,7 @@
 --              <--------> 
 --
 --       +---------------+
---    ---+       run 0        +------------- read; note: a_bus must be valid when read is '1'.
+--    ---+               +------------- read; note: a_bus must be valid when read is '1'.
 --             +----------------+
 --    ---------+                +------ ready
 --
@@ -30,6 +30,20 @@
 -- c) if during a read/write the address is not in the data or text segment a violation is reported
 --
 
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+USE work.memory_config.ALL;
+ENTITY memory IS
+  PORT(d_busout : OUT std_logic_vector(31 DOWNTO 0);
+       d_busin  : IN  std_logic_vector(31 DOWNTO 0);
+       a_bus    : IN  std_logic_vector(31 DOWNTO 0);
+       clk      : IN  std_ulogic;
+       write    : IN  std_ulogic;
+       read     : IN  std_ulogic;
+       ready    : OUT std_ulogic
+       );
+END memory;
 
 ARCHITECTURE behaviour OF memory IS
   ALIAS word_address : std_logic_vector(31 DOWNTO 2) IS a_bus(31 DOWNTO 2);
@@ -71,7 +85,7 @@ BEGIN
 "010f4022", --  sub $8,$8,$15         44   	sub $8, $8, $15  # n=n-1	
 "0401fff8", --  bgez $0,-8            45   	b nfac           
 "04010010", --  bgez $0,16            46   ffac:	b ff
-"3c011001", --  lui $1,4097           50   ser  lw $10, N              # number of terms; assembled in LUI and LW (this depends on location of N)
+"3c011001", --  lui $1,4097           50     lw $10, N              # number of terms; assembled in LUI and LW (this depends on location of N)
 "8c2a0000", --  lw $10,0($1)               
 "3c011001", --  lui $1,4097           51     lw $13, X              # value x
 "8c2d0004", --  lw $13,4($1)               
@@ -92,10 +106,9 @@ BEGIN
 "018e6020", --  add $12,$12,$14       70   	add $12, $12, $14 # sn=s(n-1)+term
 "216b0001", --  addi $11,$11,1        71   	add $11, $11, 1   # i++
 "0401fff1", --  bgez $0,-15           72   	b ntrm  # branch always to ntrm
-
+"00000000", --  nop                   73   rdy:	nop
 "3c011001", --  lui $1,4097           74     sw $12,EX # e^x in EX
-"ac2c0008", --  sw $12,8($1)     
-"00000000", --  nop                   73   rdy:	nop          
+"ac2c0008", --  sw $12,8($1)               
 OTHERS => "00000000" 
             );
   

@@ -32,7 +32,11 @@ architecture behaviour of mips_processor is
         alias rd : reg_code is current_instr(15 downto 11);
         alias imm : hword is current_instr(15 downto 0);
         alias rtype : op_code is current_instr(5 downto 0);
+<<<<<<< HEAD
+        Variable clk_count :  integer := 0;
+=======
         Variable clk_count :  integer := 3;
+>>>>>>> 226a7e272a532b164006ac0621e13ddffaec6122
       
       procedure set_cc_rd (data : in integer;
                           cc : out cc_type;
@@ -221,6 +225,10 @@ architecture behaviour of mips_processor is
             rs_int := to_integer(signed(rs_reg));
             read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
+<<<<<<< HEAD
+             wait_clk(clk_count);
+=======
+>>>>>>> 226a7e272a532b164006ac0621e13ddffaec6122
             case rtype is
               when mult => 
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));
@@ -321,10 +329,3 @@ architecture behaviour of mips_processor is
   end process;
 
 end behaviour;
-
-
-
-
-
-
-

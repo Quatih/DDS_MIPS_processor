@@ -435,6 +435,6 @@ architecture algorithm of mips_processor is
     end if;
   end process;
 
-end behaviour;
+end algorithm;
 
 

@@ -32,12 +32,8 @@ architecture behaviour of mips_processor is
         alias rd : reg_code is current_instr(15 downto 11);
         alias imm : hword is current_instr(15 downto 0);
         alias rtype : op_code is current_instr(5 downto 0);
-<<<<<<< HEAD
-        Variable clk_count :  integer := 0;
-=======
-        Variable clk_count :  integer := 3;
->>>>>>> 226a7e272a532b164006ac0621e13ddffaec6122
-      
+        variable clk_count :  integer := 3;
+
       procedure set_cc_rd (data : in integer;
                           cc : out cc_type;
                           regval : out word) is

@@ -26,7 +26,6 @@ architecture rtl of datapath is
   signal mem_read_i : std_ulogic;
   signal mem_write_i : std_ulogic;
   signal mem_bus_out_i : word;
-  signal op1, op2 : word;
   signal savereg : word := zero;
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
@@ -89,8 +88,9 @@ architecture rtl of datapath is
   end pc_adj;
 
 begin
-  control <= std2ctlr(ctrl_std);
+  
   -- using control conversion
+  control <= std2ctlr(ctrl_std);
   ready <=  ready_i;
 
   mem_addr <= aluword when (control(mread) = '1' and control(msrc) = '1') or control(mwrite) = '1' else
@@ -113,7 +113,6 @@ begin
           read_reg(rt, regfile) when control(rread) = '1' else
           dontcare;
 
-  -- do because of memory access, makes latch
   savereg <=  mem_bus_in when mem_ready = '1';
 
   spec_reg <= alu_result when control(wspreg) = '1';
@@ -123,8 +122,7 @@ process
 begin
   wait until rising_edge(clk);
 
-  if reset = '1'  then
-    -- regwrite <= zero;
+  if reset = '1'  
     instruction_i <= zero;
     mem_write_i <= '0';
     mem_read_i <= '0';
@@ -148,7 +146,6 @@ begin
           end if;
         else
           mem_write_i <= '0';
-          --it is mwrite, do nothing
         end if;
       elsif control(mread) = '1' then
         mem_read_i <= '1';
@@ -162,25 +159,13 @@ begin
     end if;
     if ready_i = '0' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
       pc_i <= std_logic_vector(signed(pc) + 4);
-      -- pc_adj(pc_i, control);
       pc_i <
     elsif control(pcimm) = '1' then
       pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
 
-      -- pc_adj(pc_i, control);
     end if;
-    -- if control(rread) = '1' then -- read from registers
-    --   op1 <= read_reg(rs, regfile);
-    --   if control(alusrc) = '1' and control(immsl) = '1' then
-    --     op2 <= load_upper(imm);
-    --   elsif control(alusrc) = '1' then
-    --     op2 <= sign_extend(imm);
-    --   else
-    --     op2 <= read_reg(rt, regfile);
-    --   end if;
     if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
-      -- regwrite <= read_reg(rt, regfile);
     elsif control(rwrite) = '1'  then
       if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
         write_reg(rd, regfile, hi);

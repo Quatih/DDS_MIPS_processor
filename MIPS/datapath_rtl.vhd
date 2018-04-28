@@ -152,7 +152,7 @@ begin
 
   if reset = '1'  then
     -- regwrite <= zero;
-    mem_bus_out_i <= dontcare;
+    mem_bus_out_i <= unknown;
     instruction_i <= zero;
     mem_write_i <= '0';
     mem_read_i <= '0';
@@ -209,7 +209,11 @@ begin
     if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
       -- regwrite <= read_reg(rt, regfile);
-    elsif control(rwrite) = '1'  then
+    else 
+      mem_bus_out_i <= unknown;
+    end if;
+
+    if control(rwrite) = '1'  then
       if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
         write_reg(rd, regfile, hi);
       elsif control(loreg) = '1' then --lo

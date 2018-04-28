@@ -11,9 +11,7 @@ configuration cnf_cmp_beh_algo of tb_cmp is
     end for;
     
     for proc_cmp:mips_processor use entity work.mips_processor(algorithm);
-
-    
-    end for;
+     end for;
 
   end for;
 end cnf_cmp_beh_algo;

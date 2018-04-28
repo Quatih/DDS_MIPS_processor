@@ -1,21 +1,18 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
-use work.processor_types.all;
-use work.memory_config.all;
-use work.control_names.all;
 
-architecture behaviour of datapath is
-  constant zero       : word := (others=>'0');
-  constant dontcare   : word := (others=>'-'); 
+
+architecture rtl of datapath is
+  constant zero     : word := (others=>'0');
+  constant dontcare : word := (others=>'-'); 
+  constant unknown  : word := (others=>'X');
+
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
-  signal spec_reg : std_logic_vector(word_length*2-1 downto 0); --special register with lo, hi
+  signal spec_reg : std_logic_vector(word_length*2-1 downto 0) := (others =>'0'); --special register with lo, hi
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
   signal pc  : word; -- unsigned(word_length*2-1 downto 0);
-  signal instruction_i : word;
+  signal instruction_i : word := zero;
     alias opcode : op_code is instruction_i(31 downto 26);
     alias rs : reg_code is instruction_i(25 downto 21);
     alias rt : reg_code is instruction_i(20 downto 16);
@@ -23,229 +20,210 @@ architecture behaviour of datapath is
     alias imm : std_logic_vector(15 downto 0) is instruction_i(15 downto 0);
     alias rtype : op_code is instruction_i(5 downto 0);
   signal control : control_bus;
-  signal ready_i : std_ulogic;
   alias aluword : word is alu_result(word_length -1 downto 0);
+  signal pc_i : word;
+  signal ready_i : std_ulogic;
+  signal mem_read_i : std_ulogic;
+  signal mem_write_i : std_ulogic;
+  signal mem_bus_out_i : word;
   signal op1, op2 : word;
-
-
-  procedure read_reg(source          : in reg_code;
-                     signal regfile  : in register_file;
-                     ret             : out word ) is
+  signal savereg : word := zero;
+  signal pctemp : word;
+  signal memcheck : std_ulogic := '0';
+  function read_reg(source          : in reg_code;
+                     signal regfile  : in register_file) return word is
+    variable ret : word;
   begin
     if((unsigned(source)) > regfile'high) then
       assert false report "wrong access to register" severity failure;
-    else
+      ret := (others => '-');
+    else 
       ret := regfile(to_integer(unsigned(source)));
     end if;
+    return ret;
   end read_reg;
 
-  procedure write_reg(destination     : in reg_code;
-                      signal regfile  : out register_file;
-                      data            : in word)is
+  procedure write_reg(signal destination  : in reg_code;
+                      signal regfile      : out register_file;
+                      signal data         : in word) is
   begin
     if((unsigned(destination)) > regfile'high) then
       assert false report "wrong access to register" severity failure;
     else
       regfile(to_integer(unsigned(destination))) <= data;
+      -- regwrite <= data;
     end if;
   end write_reg;
+      
+  function sign_extend(vec : hword) return word is
+    variable ret : word;
+  begin
+    ret(31 downto 16) := (others => vec(15)); -- sign extend imm
+    ret(15 downto 0) := vec;
+    return ret;
+  end sign_extend;
   
+  function load_upper(vec : hword) return word is
+    variable ret : word;
+  begin
+    ret(31 downto 16) := vec; -- sign extend imm
+    ret(15 downto 0) := (others => '0');
+    return ret;
+  end load_upper;
+
+  function seshift(vec : hword) return word is --sign extend and shift
+    variable ret : word;
+  begin
+      ret(31 downto 18) := (others => vec(15)); -- sign extend
+      ret(17 downto 2) := vec;
+      ret(1 downto 0) := (others => '0');
+    return ret;
+  end seshift;
+  
+  procedure pc_adj(signal pc : inout word;
+                  control : in control_bus) is
+  begin
+    if control(pcincr) = '1' then
+      pc <= std_logic_vector(signed(pc) + 4);
+    elsif control(pcimm) = '1' then
+      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+    end if;
+  end pc_adj;
+
 begin
   control <= std2ctlr(ctrl_std);
   -- using control conversion
-  ready <= ready_i;
-  alu_op1 <= op1;
-  alu_op2 <= op2;
+  ready <=  ready_i;
+
+  mem_addr <= aluword when (control(mread) = '1' and control(msrc) = '1') or control(mwrite) = '1' else
+              pc      when control(mread) = '1' else        
+              unknown;
+              
+  mem_read <= mem_read_i;
+
+  mem_write <= mem_write_i;
+
+  mem_bus_out <= mem_bus_out_i;
+  pc <= pc_i when control(mread) = '1' and mem_ready = '0';
+
   instruction <= instruction_i;
-  main : process
-    variable regresult : word;
+  memcheck <= '1', '0' after 40 ns when mem_ready = '1';
+  -- make latch for instruction
+  -- instruction_i <=  mem_bus_in when control(mread) = '1' and control(msrc) = '0' and mem_ready = '1' and ready_i = '0';
 
-    -- Proxy mem_read, calls mem_read in pkg_memory_access
-    procedure memory_read(
-      addr : in word; --std_logic_vector(word_length*2-1 downto 0);
-      result : out word
-    ) is
-      -- used 'global' signals are:
-      --   clk, reset, ready, read, a_bus, d_busin
-      -- read data from addr in memory
-      begin
-        -- put address on output
+  -- alu_op1 <=  op1;
+  -- alu_op2 <=  op2;
 
-      mem_addr <= std_logic_vector(addr);
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;
 
-      loop -- ready must be low (handshake)
-        if reset='1' then
-          return;
-        end if;
-        exit when mem_ready='0';
-        wait until clk='1';
-      end loop;
+  -- doesn't work ;(
+  alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
+          dontcare;
+  alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
+          sign_extend(imm) when control(alusrc) = '1' else
+          read_reg(rt, regfile) when control(rread) = '1' else
+          dontcare;
 
-      mem_read <= '1';
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;
+  -- do because of memory access, makes latch
+  savereg <=  mem_bus_in when mem_ready = '1';
 
-      loop
-        wait until clk='1';
-        if reset='1' then
-          return;
-        end if;
+  -- instruction_i <= savereg when control(rread) = '1' and control(msrc) = '0' else
+  --                  instruction_i;
+  -- pc_i <= std_logic_vector(to_unsigned(text_base_address, word_length)) when reset = '1' else
+  --         std_logic_vector(unsigned(pc) + 4) when control(mread) = '1' and mem_ready = '1' else
+  --         std_logic_vector(signed(pc) + signed(seshift(imm))) when control(mread) = '1' and control(msrc) = '1' and mem_ready = '1';
+        
+  spec_reg <= alu_result when control(wspreg) = '1';
 
-        if mem_ready='1' then
-          result := mem_bus_in;
-          exit;
-        end if;    
-      end loop;
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;
+                      -- or add if(lohisel)
+  -- state <=  s_readmemreg when (state = s_exec or state = s_readstartreg) and control(mread) = '1' and control(msrc) = '1' and mem_ready = '0' else 
+  --           s_readmempc when (state = s_exec or state = s_readstartpc) and control(mread) = '1' and mem_ready = '0' else
+  --           s_readstartpc when state = s_exec and control(mread) = '1' and mem_ready = '1' else
+  --           s_readstartreg when state = s_exec and control(mread) = '1' and control(msrc) = '1' and mem_ready = '1' else
+  --           s_writemem when (state = s_exec or state = s_writestart) and control(mwrite) = '1' and mem_ready = '0' else
+  --           s_writestart when state = s_exec and control(mwrite) = '1' and mem_ready = '1'
+  --           else s_exec;
 
-      mem_read <= '0'; 
-      mem_addr <= (others => '-');
-    end memory_read;                    
+process 
+begin
+  wait until rising_edge(clk);
 
-    procedure memory_write(
-      addr    : in word; --std_logic_vector(word_length*2-1 downto 0);
-      data  : in word
-    ) is
-      -- used 'global' signals are:
-      --   clk, reset, ready, write, a_bus, d_busout
-      -- write data to addr in memory
-    begin
-      -- put address on output
-      mem_addr <= std_logic_vector(addr);
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;
-
-      loop -- ready must be low (handshake)
-        if reset='1' then
-          return;
-        end if;
-        exit when mem_ready='0';
-        wait until clk='1';
-      end loop;
-      mem_bus_out <= data;
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;  
-      mem_write <= '1';
-
-      loop
-        wait until clk='1';
-        if reset='1' then
-          return;
-        end if;
-          exit when mem_ready='1';  
-      end loop;
-      wait until clk='1';
-      if reset='1' then
-        return;
-      end if;
-      --
-      mem_write <= '0';
-      mem_bus_out <= (others => '-');
-      mem_addr <= (others => '-');
-    end memory_write;
-  begin
-    if(reset = '1') then
-      mem_read <= '0';
-      mem_write <= '0';
-      mem_addr <= (others => '-');
-      mem_bus_out <= (others => '0');
-      instruction_i <= zero;
-      -- opc <= (others => '0');
-      -- rtopc <= (others => '0');
-      pc <= std_logic_vector(to_unsigned(text_base_address, word_length));
-
-      ready_i <= '0';
-      op1 <= (others => '0');
-      op2 <= (others => '0');
-      regfile <= (others => (others => '0'));
-      spec_reg <= (others => '0');
-      loop
-				wait until rising_edge(clk);
-				exit when reset = '0';
-			end loop;
-    end if;
-    wait until rising_edge(clk);
+  if reset = '1'  then
+    -- regwrite <= zero;
+    mem_bus_out_i <= unknown;
+    instruction_i <= zero;
+    mem_write_i <= '0';
+    mem_read_i <= '0';
     ready_i <= '0';
-    loop
-      if(unsigned(ctrl_std) = to_unsigned(0, ctrl_std'length)) then
-        wait until rising_edge(clk);
-      else
-        exit;
-      end if;
-      exit when reset = '1';
-    end loop;
-     
-    if control(pcimm) = '1' then
-      regresult(31 downto 18) := (others => imm(15)); -- sign extend
-      regresult(17 downto 2) := imm;
-      regresult(1 downto 0) := (others => '0');
+    regfile <= (others => (others => '0'));
+    pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
+    pctemp <= std_logic_vector(to_signed(text_base_address, word_length));
+  else
 
-      pc <= std_logic_vector(signed(pc) + signed(regresult)); -- possibly error if signed(pc) is outside of mem range
-    end if;
-  
-    --regstuff
-    if control(rread) = '1' then
-      read_reg(rs, regfile, regresult); 
-      op1 <= regresult;
-      if control(alusrc) = '1' then -- src is imm from instr
-        if control(immsl) = '1' then -- shift left sign extend
-          op2(15 downto 0) <= (others => '0');
-          op2(31 downto 16) <= imm;
-        else -- sign extend
-          op2(31 downto 16) <= (others => imm(15)); -- sign extend imm
-          op2(15 downto 0) <= imm;
+    if ready_i = '0' then
+      if mem_ready = '1' then
+        if control(msrc) = '1' and memcheck = '1' then
+          ready_i <= '1';
+          write_reg(rt, regfile, savereg);
+        elsif control(mread) = '1' and memcheck = '1' then
+          ready_i <= '1';
+          instruction_i <= savereg;
+          pctemp <= std_logic_vector(signed(pc) + 4);
+        elsif control(mwrite) = '1' and memcheck = '1' then
+          ready_i <= '1';
+        else
+          -- wait on ready from memory
         end if;
-      else -- src is rt 
-        read_reg(rt, regfile, regresult);
-        op2 <= regresult;
+      elsif control(mread) = '1' then
+        mem_read_i <= '1';
+        mem_write_i <= '0';
+      elsif control(mwrite) = '1' then
+        mem_write_i <= '1';
+        mem_read_i <= '0';
       end if;
-    elsif control(rwrite) = '1' then
-      if control(rspreg) = '1' then -- if write from spreg (mfhi and mflo)
-        if control(lohisel) = '1' then --hi
-          write_reg(rd, regfile, hi);
-        else --lo
-          write_reg(rd, regfile, lo);
-        end if;
-      elsif(control(rdest) = '1') then --write to rd, all rtype instr 
+    else
+      ready_i <= '0';
+      mem_read_i <= '0';
+      mem_write_i <= '0';
+    end if;
+
+    if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
+      pc_i <= pctemp;
+      -- pc_adj(pc_i, control);
+    elsif control(pcimm) = '1' then
+      pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
+
+      -- pc_adj(pc_i, control);
+    end if;
+    -- if control(rread) = '1' then -- read from registers
+    --   op1 <= read_reg(rs, regfile);
+    --   if control(alusrc) = '1' and control(immsl) = '1' then
+    --     op2 <= load_upper(imm);
+    --   elsif control(alusrc) = '1' then
+    --     op2 <= sign_extend(imm);
+    --   else
+    --     op2 <= read_reg(rt, regfile);
+    --   end if;
+    if control(mwrite) = '1' then
+      mem_bus_out_i <= read_reg(rt, regfile);
+      -- regwrite <= read_reg(rt, regfile);
+    else 
+      mem_bus_out_i <= unknown;
+    end if;
+
+    if control(rwrite) = '1'  then
+      if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
+        write_reg(rd, regfile, hi);
+      elsif control(loreg) = '1' then --lo
+        write_reg(rd, regfile, lo);
+      elsif control(rdest) = '1'  then --write to rd, all rtype instr 
         write_reg(rd, regfile, aluword);
       else
         write_reg(rt, regfile, aluword);
       end if;
-    elsif control(wspreg) = '1' then
-      spec_reg <= alu_result;
-      -- or add if(lohisel)
-    elsif control(mread) = '1' then --read mem
-      if control(msrc) = '1' then --addr from alu
-        memory_read(std_logic_vector(unsigned(aluword)),regresult);
-        write_reg(rt, regfile, regresult);
-      else -- addr from pc
-        memory_read(std_logic_vector(pc), regresult);-- not sure if correct pc is loaded, because signal
-        instruction_i <= regresult;
-        -- opc <= regresult(31 downto 26); -- not sure if works because of signals, needs testing
-        -- rtopc <= regresult(5 downto 0); -- possibly not necessary depending on opc, could be a power waste but trade-off vs extra hardware to check if opc is 0
-        pc <= std_logic_vector(unsigned(pc) + 4);
-      end if;
-      ready_i <= '1';
-    elsif control(mwrite) = '1' then -- write memory
-      read_reg(rt, regfile, regresult);
-      -- unsigned conversion because the output of the alu is signed, and memory addresses are unsigned
-      memory_write(std_logic_vector(unsigned(aluword)),regresult); 
-      ready_i <= '1'; -- ready used for memread and write ops
     end if;
-    
-  end process;
 
-end behaviour;
+
+    
+  end if;
+end process;
+end rtl;

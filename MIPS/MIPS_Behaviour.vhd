@@ -225,10 +225,7 @@ architecture behaviour of mips_processor is
             rs_int := to_integer(signed(rs_reg));
             read_data(rt, regfile, rt_reg);
             rt_int := to_integer(signed(rt_reg));
-<<<<<<< HEAD
              wait_clk(clk_count);
-=======
->>>>>>> 226a7e272a532b164006ac0621e13ddffaec6122
             case rtype is
               when mult => 
                 tmp := std_logic_vector(to_signed(rs_int*rt_int, word_length*2));

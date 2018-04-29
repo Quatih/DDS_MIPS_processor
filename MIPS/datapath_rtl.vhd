@@ -162,7 +162,7 @@ begin
     end if;
 
     if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + 4); -- pctemp used because otherwise it might be incremented twice
+      pc_i <= std_logic_vector(signed(pc_i) + 4); -- pctemp used because otherwise it might be incremented twice
     elsif control(pcimm) = '1' then
       pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
     end if;

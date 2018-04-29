@@ -29,10 +29,10 @@ architecture rtl of datapath is
   signal mem_read_i : std_ulogic;
   signal mem_write_i : std_ulogic;
   signal mem_bus_out_i : word;
-  signal op1, op2 : word;
   signal savereg : word := zero;
   signal pctemp : word;
-  signal memcheck : std_ulogic := '0';
+
+  -- reads from the input register
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
     variable ret : word;
@@ -46,6 +46,8 @@ architecture rtl of datapath is
     return ret;
   end read_reg;
 
+
+  --writes to the input register
   procedure write_reg(signal destination  : in reg_code;
                       signal regfile      : out register_file;
                       signal data         : in word) is

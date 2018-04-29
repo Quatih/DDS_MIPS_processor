@@ -2,12 +2,12 @@
 configuration cnf_cmp_beh_dpsynth of tb_cmp is
   for structure
     
-    for mem_beh:memory use entity work.memory(test);
+    for mem_beh:memory use entity work.memory(behaviour);
     end for;
     for proc_beh:MIPS_Processor use entity work.MIPS_Processor(behaviour);
     end for;
 
-    for mem_cmp:memory use entity work.memory(test);
+    for mem_cmp:memory use entity work.memory(behaviour);
     end for;
     
     for proc_cmp:mips_processor use entity work.mips_processor(mips_dp_ctrl);

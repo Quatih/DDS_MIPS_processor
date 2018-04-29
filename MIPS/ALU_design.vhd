@@ -232,8 +232,6 @@ begin
 	end process;
 
 	result 		<= std_logic_vector(calc);
---		op1i			<= op1;
---		op2i 			<= op2;
 	cc 			<= cci;
 	ready			<=  readyi;
 end behaviour;

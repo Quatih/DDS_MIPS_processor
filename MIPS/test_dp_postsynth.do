@@ -7,6 +7,8 @@ vcom -quiet MIPS_Processor_types.vhd
 vcom -quiet pkg_control_names_v2.vhd
 vcom -quiet tb_dpc.vhd
 vcom -quiet test_memory.vhd
+
+vcom -quiet memory.vhd
 vcom -quiet controller.vhd
 vcom -quiet controller_behaviour.vhd
 vcom -quiet memory.vhd

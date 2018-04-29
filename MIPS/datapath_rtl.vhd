@@ -30,7 +30,8 @@ architecture rtl of datapath is
   signal mem_write_i : std_ulogic;
   signal mem_bus_out_i : word;
   signal op1, op2 : word;
-  signal savereg : word;
+  signal savereg : word := zero;
+  signal pctemp : word;
   signal memcheck : std_ulogic := '0';
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
@@ -96,42 +97,36 @@ begin
   mem_write <= mem_write_i;
 
   mem_bus_out <= mem_bus_out_i;
-  -- pc <= pc_i when control(mread) = '1' and mem_ready = '0';
+  pc <= pc_i when control(mread) = '1' and mem_ready = '0';
 
   instruction <= instruction_i;
-  -- memcheck <= '1', '0' after 40 ns when mem_ready = '1';
   -- make latch for instruction
 
   -- doesn't work ;(
-  -- alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
-  --             dontcare;
-  -- alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
-  --             sign_extend(imm) when control(alusrc) = '1' else
-  --             read_reg(rt, regfile) when control(rread) = '1' else
-  --             dontcare; 
-  alu_op1 <= op1;
-  alu_op2 <= op2;
+  alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
+          dontcare;
+  alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
+          sign_extend(imm) when control(alusrc) = '1' else
+          read_reg(rt, regfile) when control(rread) = '1' else
+          dontcare;
+
   -- do because of memory access, makes latch
   savereg <=  mem_bus_in when mem_ready = '1';
  
-  -- spec_reg <= alu_result when control(wspreg) = '1';
 process 
-variable pctemp : word;
 begin
   wait until rising_edge(clk);
 
   if reset = '1'  then
     -- regwrite <= zero;
-    op1 <= dontcare;
-    op2 <= dontcare;
     mem_bus_out_i <= dontcare;
     instruction_i <= zero;
     mem_write_i <= '0';
     mem_read_i <= '0';
     ready_i <= '0';
     regfile <= (others => (others => '0'));
-    pc <= std_logic_vector(to_signed(text_base_address, word_length));
-    pctemp := std_logic_vector(to_signed(text_base_address, word_length));
+    pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
+    pctemp <= std_logic_vector(to_signed(text_base_address, word_length));
   else
     if ready_i = '0' then
       if mem_ready = '1' then
@@ -143,7 +138,7 @@ begin
           ready_i <= '1';
           mem_read_i <= '0';
           instruction_i <= savereg;
-          pctemp := std_logic_vector(signed(pc) + 4);
+          pctemp <= std_logic_vector(signed(pc) + 4);
         elsif control(mwrite) = '1' then
           ready_i <= '1';
           mem_write_i <= '0';
@@ -163,31 +158,14 @@ begin
       mem_write_i <= '0';
     end if;
 
-    -- use pctemp because otherwise it wasn't synthesizable
     if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
-      pc <= pctemp;
+      pc_i <= pctemp;
     elsif control(pcimm) = '1' then
-      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
+      pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
     end if;
-
     if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
-      -- regwrite <= read_reg(rt, regfile);
-    end if;
-
-    if control(rread) = '1' then -- read from registers
-    op1 <= read_reg(rs, regfile);
-      if control(alusrc) = '1' and control(immsl) = '1' then
-        op2 <= load_upper(imm);
-      elsif control(alusrc) = '1' then
-        op2 <= sign_extend(imm);
-      else
-        op2 <= read_reg(rt, regfile);
-      end if;
-    end if;
-
-
-    if control(rwrite) = '1'  then
+    elsif control(rwrite) = '1'  then
       if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
         write_reg(rd, regfile, hi);
       elsif control(loreg) = '1' then --lo
@@ -197,8 +175,7 @@ begin
       else
         write_reg(rt, regfile, aluword);
       end if;
-    end if;
-    if control(wspreg) = '1' then
+    elsif control(wspreg) = '1' then
       spec_reg <= alu_result;
     end if;
   end if;

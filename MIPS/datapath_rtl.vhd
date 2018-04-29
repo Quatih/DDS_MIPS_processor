@@ -4,10 +4,7 @@ architecture rtl of datapath is
   constant zero     : word := (others=>'0');
   constant dontcare : word := (others=>'-'); 
   constant unknown  : word := (others=>'X');
-  type states is (s_exec, s_readmemreg, s_readmempc, s_readstartpc, s_readstartreg, s_writemem, s_writestart);
-  signal state : states;
-  type mstates is (mem, exec);
-  signal mstate : mstates;
+
   type register_file is array (0 to 31) 
     of std_logic_vector(word_length-1 downto 0);
   signal regfile  : register_file;
@@ -104,7 +101,6 @@ begin
   instruction <= instruction_i;
   -- make latch for instruction
 
-  -- doesn't work ;(
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
           dontcare;
   alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
@@ -120,7 +116,7 @@ begin
   wait until rising_edge(clk);
 
   if reset = '1'  then
-    -- regwrite <= zero;
+    
     mem_bus_out_i <= dontcare;
     instruction_i <= zero;
     mem_write_i <= '0';

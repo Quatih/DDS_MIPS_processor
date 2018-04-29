@@ -82,16 +82,6 @@ architecture rtl of datapath is
       ret(1 downto 0) := (others => '0');
     return ret;
   end seshift;
-  
-  procedure pc_adj(signal pc : inout word;
-                  control : in control_bus) is
-  begin
-    if control(pcincr) = '1' then
-      pc <= std_logic_vector(signed(pc) + 4);
-    elsif control(pcimm) = '1' then
-      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
-    end if;
-  end pc_adj;
 
 begin
   control <= std2ctlr(ctrl_std);
@@ -112,11 +102,6 @@ begin
   instruction <= instruction_i;
   memcheck <= '1', '0' after 40 ns when mem_ready = '1';
   -- make latch for instruction
-  -- instruction_i <=  mem_bus_in when control(mread) = '1' and control(msrc) = '0' and mem_ready = '1' and ready_i = '0';
-
-  -- alu_op1 <=  op1;
-  -- alu_op2 <=  op2;
-
 
   -- doesn't work ;(
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
@@ -128,24 +113,8 @@ begin
 
   -- do because of memory access, makes latch
   savereg <=  mem_bus_in when mem_ready = '1';
-
-  -- instruction_i <= savereg when control(rread) = '1' and control(msrc) = '0' else
-  --                  instruction_i;
-  -- pc_i <= std_logic_vector(to_unsigned(text_base_address, word_length)) when reset = '1' else
-  --         std_logic_vector(unsigned(pc) + 4) when control(mread) = '1' and mem_ready = '1' else
-  --         std_logic_vector(signed(pc) + signed(seshift(imm))) when control(mread) = '1' and control(msrc) = '1' and mem_ready = '1';
-        
+ 
   spec_reg <= alu_result when control(wspreg) = '1';
-
-                      -- or add if(lohisel)
-  -- state <=  s_readmemreg when (state = s_exec or state = s_readstartreg) and control(mread) = '1' and control(msrc) = '1' and mem_ready = '0' else 
-  --           s_readmempc when (state = s_exec or state = s_readstartpc) and control(mread) = '1' and mem_ready = '0' else
-  --           s_readstartpc when state = s_exec and control(mread) = '1' and mem_ready = '1' else
-  --           s_readstartreg when state = s_exec and control(mread) = '1' and control(msrc) = '1' and mem_ready = '1' else
-  --           s_writemem when (state = s_exec or state = s_writestart) and control(mwrite) = '1' and mem_ready = '0' else
-  --           s_writestart when state = s_exec and control(mwrite) = '1' and mem_ready = '1'
-  --           else s_exec;
-
 process 
 begin
   wait until rising_edge(clk);
@@ -161,7 +130,6 @@ begin
     pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
     pctemp <= std_logic_vector(to_signed(text_base_address, word_length));
   else
-
     if ready_i = '0' then
       if mem_ready = '1' then
         if control(msrc) = '1' then
@@ -197,18 +165,7 @@ begin
       -- pc_adj(pc_i, control);
     elsif control(pcimm) = '1' then
       pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
-
-      -- pc_adj(pc_i, control);
     end if;
-    -- if control(rread) = '1' then -- read from registers
-    --   op1 <= read_reg(rs, regfile);
-    --   if control(alusrc) = '1' and control(immsl) = '1' then
-    --     op2 <= load_upper(imm);
-    --   elsif control(alusrc) = '1' then
-    --     op2 <= sign_extend(imm);
-    --   else
-    --     op2 <= read_reg(rt, regfile);
-    --   end if;
     if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
       -- regwrite <= read_reg(rt, regfile);
@@ -223,9 +180,6 @@ begin
         write_reg(rt, regfile, aluword);
       end if;
     end if;
-
-
-    
   end if;
 end process;
 end rtl;

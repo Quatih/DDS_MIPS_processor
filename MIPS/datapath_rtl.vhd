@@ -77,16 +77,6 @@ architecture rtl of datapath is
       ret(1 downto 0) := (others => '0');
     return ret;
   end seshift;
-  
-  procedure pc_adj(signal pc : inout word;
-                  control : in control_bus) is
-  begin
-    if control(pcincr) = '1' then
-      pc <= std_logic_vector(signed(pc) + 4);
-    elsif control(pcimm) = '1' then
-      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
-    end if;
-  end pc_adj;
 
 begin
   
@@ -110,9 +100,9 @@ begin
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
           dontcare;
   alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
-          sign_extend(imm) when control(alusrc) = '1' else
-          read_reg(rt, regfile) when control(rread) = '1' else
-          dontcare;
+              sign_extend(imm) when control(alusrc) = '1' else
+              read_reg(rt, regfile) when control(rread) = '1' else
+              dontcare;
 
   savereg <=  mem_bus_in when mem_ready = '1';
 

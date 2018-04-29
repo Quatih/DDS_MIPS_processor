@@ -11,7 +11,7 @@ architecture rtl of datapath is
   signal spec_reg : std_logic_vector(word_length*2-1 downto 0) := (others =>'0'); --special register with lo, hi
     alias hi : word is spec_reg(word_length*2-1 downto word_length);
     alias lo : word is spec_reg(word_length -1 downto 0);
-  signal pc  : word; -- unsigned(word_length*2-1 downto 0);
+  signal pc  : word;
   signal instruction_i : word := zero;
     alias opcode : op_code is instruction_i(31 downto 26);
     alias rs : reg_code is instruction_i(25 downto 21);
@@ -27,6 +27,7 @@ architecture rtl of datapath is
   signal mem_write_i : std_ulogic;
   signal mem_bus_out_i : word;
   signal savereg : word := zero;
+  signal memcheck : std_ulogic := '0';
   function read_reg(source          : in reg_code;
                      signal regfile  : in register_file) return word is
     variable ret : word;
@@ -76,16 +77,6 @@ architecture rtl of datapath is
       ret(1 downto 0) := (others => '0');
     return ret;
   end seshift;
-  
-  procedure pc_adj(signal pc : inout word;
-                  control : in control_bus) is
-  begin
-    if control(pcincr) = '1' then
-      pc <= std_logic_vector(signed(pc) + 4);
-    elsif control(pcimm) = '1' then
-      pc <= std_logic_vector(signed(pc) + signed(seshift(imm)));
-    end if;
-  end pc_adj;
 
 begin
   
@@ -102,27 +93,27 @@ begin
   mem_write <= mem_write_i;
 
   mem_bus_out <= mem_bus_out_i;
-  pc <= pc_i;
+  pc <= pc_i when control(mread) = '1' and mem_ready = '0';
 
   instruction <= instruction_i;
-
+  memcheck <= '1', '0' after 40 ns when mem_ready = '1';
   alu_op1 <=  read_reg(rs, regfile) when control(rread) = '1' else
           dontcare;
   alu_op2 <=  load_upper(imm) when control(alusrc) = '1' and control(immsl) = '1' else
-          sign_extend(imm) when control(alusrc) = '1' else
-          read_reg(rt, regfile) when control(rread) = '1' else
-          dontcare;
+              sign_extend(imm) when control(alusrc) = '1' else
+              read_reg(rt, regfile) when control(rread) = '1' else
+              dontcare;
 
   savereg <=  mem_bus_in when mem_ready = '1';
 
   spec_reg <= alu_result when control(wspreg) = '1';
-
 process 
- variable pctemp : word;
+  variable pctemp : word;
 begin
   wait until rising_edge(clk);
 
-  if reset = '1'  
+  if reset = '1'  then
+    mem_bus_out_i <= unknown;
     instruction_i <= zero;
     mem_write_i <= '0';
     mem_read_i <= '0';
@@ -130,43 +121,49 @@ begin
     regfile <= (others => (others => '0'));
     pc_i <= std_logic_vector(to_signed(text_base_address, word_length));
     pctemp := std_logic_vector(to_signed(text_base_address, word_length));
-
   else
 
     if ready_i = '0' then
       if mem_ready = '1' then
-        ready_i <= '1';
-        mem_read_i <= '0';
-        if control(msrc) = '1' then
+        if control(msrc) = '1' and memcheck = '1' then
+          ready_i <= '1';
           write_reg(rt, regfile, savereg);
-        elsif control(mread) = '1' then
+        elsif control(mread) = '1' and memcheck = '1' then
+          ready_i <= '1';
           instruction_i <= savereg;
-          if control(pcincr) = '1' then
-            pctemp := std_logic_vector(signed(pc) + 4);
-          end if;
+          -- pctemp := std_logic_vector(signed(pc) + 4);
+        elsif control(mwrite) = '1' and memcheck = '1' then
+          ready_i <= '1';
         else
-          mem_write_i <= '0';
+
+          -- wait on ready from memory
         end if;
       elsif control(mread) = '1' then
         mem_read_i <= '1';
+        mem_write_i <= '0';
       elsif control(mwrite) = '1' then
         mem_write_i <= '1';
-        ready_i <= '0';
+        mem_read_i <= '0';
       end if;
     else
-      ready_i <= '0';  
-
+      ready_i <= '0';
+      mem_read_i <= '0';
+      mem_write_i <= '0';
     end if;
-    if ready_i = '0' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + 4);
-      pc_i <
+
+    if ready_i = '1' and mem_ready = '1' and control(mread) = '1' and control(pcincr) = '1' then
+      pc_i <= std_logic_vector(signed(pc_i) + 4); -- pctemp used because otherwise it might be incremented twice
     elsif control(pcimm) = '1' then
-      pc_i <= std_logic_vector(signed(pc) + signed(seshift(imm)));
-
+      pc_i <= std_logic_vector(signed(pc_i) + signed(seshift(imm)));
     end if;
+
     if control(mwrite) = '1' then
       mem_bus_out_i <= read_reg(rt, regfile);
-    elsif control(rwrite) = '1'  then
+    else 
+      mem_bus_out_i <= unknown;
+    end if;
+
+    if control(rwrite) = '1'  then
       if control(hireg) = '1' then -- if write from spreg (mfhi and mflo)
         write_reg(rd, regfile, hi);
       elsif control(loreg) = '1' then --lo
